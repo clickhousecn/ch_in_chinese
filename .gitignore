@@ -1,0 +1,16 @@
+build
+tmp
+
+# Mac
+.DS_Store
+
+# Python cache
+*.pyc
+__pycache__
+
+
+# JetBrains project files
+.idea
+
+# Microsoft Visual Studio Code
+.vscode
