@@ -955,36 +955,86 @@ The query can only specify a single ARRAY JOIN clause.
 
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
-### JOIN 语句
 
-JOIN标准语句, 与ARRAY JOIN 关系不大.
+JOIN clause
+
+The normal JOIN, which is not related to ARRAY JOIN described above.
 
 [GLOBAL] ANY|ALL INNER|LEFT [OUTER] JOIN (subquery)|table USING columns_list
-在子查询中执行JOIN查询. 在查询处理开始时, 子查询在 JOIN 以后指定, 他的结果保存在内存中. 然后从指定在FROM语句中的"左关联" 表中读取, 在读取过程中, 对于从"左关联" 表中读取的每行记录, 和从子查询结果("右关联")表中查询的数据满足USING中的匹配条件.
+Performs joins with data from the subquery. At the beginning of query processing, the subquery specified after JOIN is run, and its result is saved in memory. Then it is read from the "left" table specified in the FROM clause, and while it is being read, for each of the read rows from the "left" table, rows are selected from the subquery results table (the "right" table) that meet the condition for matching the values of the columns specified in USING.
 
-表名能够被指定来替代子查询. 这等于SELECT * FROM table subquery, 在特定情况下，当表有Join 引擎时 – 一个数组准备 join.
+The table name can be specified instead of a subquery. This is equivalent to the SELECT * FROM table subquery, except in a special case when the table has the Join engine – an array prepared for joining.
 
-在JOIN中所有的列如果不需要，则从子查询中删除.
+All columns that are not needed for the JOIN are deleted from the subquery.
 
-有如下几种类型的JOIN:
+There are several types of JOINs:
 
-INNER 或 LEFT 类型: 如果 INNER 被指定，结果仅包含这些行，在右表中匹配的行. 如果 LEFT 被指定，任何在左表中的行没有匹配右表中的行都将被分配默认值 - zeros or empty rows. LEFT OUTER 可以被写来替代LEFT; OUTER 不影响任何事情。
+INNER or LEFT type: If INNER is specified, the result will contain only those rows that have a matching row in the right table. If LEFT is specified, any rows in the left table that don't have matching rows in the right table will be assigned the default value - zeros or empty rows. LEFT OUTER may be written instead of LEFT; the word OUTER does not affect anything.
 
-ANY 或 ALL 字符串: 如果ANY 被指定和右表有一些匹配的行，只有第一行发现被Join，. 如果 ALL 被指定，右表有一些匹配的行，数据将按照行数相乘.
+ANY or ALL stringency:If ANY is specified and the right table has several matching rows, only the first one found is joined. If ALL is specified and the right table has several matching rows, the data will be multiplied by the number of these rows.
 
-使用 ALL 对应的 JOIN 语义. 使用ANY 是最优的. 如果右表仅有一个匹配行, ANY 和 ALL 的结果是相同的. 你必须指定 ANY 或 ALL (默认情况下，2个都不选择).
+Using ALL corresponds to the normal JOIN semantic from standard SQL. Using ANY is optimal. If the right table has only one matching row, the results of ANY and ALL are the same. You must specify either ANY or ALL (neither of them is selected by default).
 
-GLOBAL 分布:
+GLOBAL distribution:
 
-当使用 JOIN语句, 查询将被发送至远程服务器. 子查询将被运行在每个节点上，为了让右表和JOIN查询运行在此表上. 换句话说, 右表单独运行在每个服务器上.
+When using a normal JOIN, the query is sent to remote servers. Subqueries are run on each of them in order to make the right table, and the join is performed with this table. In other words, the right table is formed on each server separately.
 
-当使用 GLOBAL ... JOIN, 首先 请求服务器运行子查询来计算右表. 此临时表被传递到每个远程服务器, 查询运行在临时表上.
+When using GLOBAL ... JOIN, first the requestor server runs a subquery to calculate the right table. This temporary table is passed to each remote server, and queries are run on them using the temporary data that was transmitted.
 
-当使用 GLOBAL JOINs时需要小心. 更多信息, 请查看章节 "分布式子查询".
+Be careful when using GLOBAL JOINs. For more information, see the section "Distributed subqueries".
 
-任意的JOINs都是有可能的. 例如, GLOBAL ANY LEFT OUTER JOIN.
+Any combination of JOINs is possible. For example, GLOBAL ANY LEFT OUTER JOIN.
 
-当运行一个 JOIN时, 执行顺序没有优化，和其他的查询阶段相比. Join在WHERE过滤之前和聚合之前被执行. 为了设置处理顺序, 我们推荐在一个子查询里运行一个JOIN子查询.
+When running a JOIN, there is no optimization of the order of execution in relation to other stages of the query. The join (a search in the right table) is run before filtering in WHERE and before aggregation. In order to explicitly set the processing order, we recommend running a JOIN subquery with a subquery.
+
+Example:
+
+SELECT
+    CounterID,
+    hits,
+    visits
+FROM
+(
+    SELECT
+        CounterID,
+        count() AS hits
+    FROM test.hits
+    GROUP BY CounterID
+) ANY LEFT JOIN
+(
+    SELECT
+        CounterID,
+        sum(Sign) AS visits
+    FROM test.visits
+    GROUP BY CounterID
+) USING CounterID
+ORDER BY hits DESC
+LIMIT 10
+┌─CounterID─┬───hits─┬─visits─┐
+│   1143050 │ 523264 │  13665 │
+│    731962 │ 475698 │ 102716 │
+│    722545 │ 337212 │ 108187 │
+│    722889 │ 252197 │  10547 │
+│   2237260 │ 196036 │   9522 │
+│  23057320 │ 147211 │   7689 │
+│    722818 │  90109 │  17847 │
+│     48221 │  85379 │   4652 │
+│  19762435 │  77807 │   7026 │
+│    722884 │  77492 │  11056 │
+└───────────┴────────┴────────┘
+Subqueries don't allow you to set names or use them for referencing a column from a specific subquery. The columns specified in USING must have the same names in both subqueries, and the other columns must be named differently. You can use aliases to change the names of columns in subqueries (the example uses the aliases 'hits' and 'visits').
+
+The USING clause specifies one or more columns to join, which establishes the equality of these columns. The list of columns is set without brackets. More complex join conditions are not supported.
+
+The right table (the subquery result) resides in RAM. If there isn't enough memory, you can't run a JOIN.
+
+Only one JOIN can be specified in a query (on a single level). To run multiple JOINs, you can put them in subqueries.
+
+Each time a query is run with the same JOIN, the subquery is run again – the result is not cached. To avoid this, use the special 'Join' table engine, which is a prepared array for joining that is always in RAM. For more information, see the section "Table engines, Join".
+
+In some cases, it is more efficient to use IN instead of JOIN. Among the various types of JOINs, the most efficient is ANY LEFT JOIN, then ANY INNER JOIN. The least efficient are ALL LEFT JOIN and ALL INNER JOIN.
+
+If you need a JOIN for joining with dimension tables (these are relatively small tables that contain dimension properties, such as names for advertising campaigns), a JOIN might not be very convenient due to the bulky syntax and the fact that the right table is re-accessed for every query. For such cases, there is an "external dictionaries" feature that you should use instead of JOIN. For more information, see the section "External dictionaries".
 
 
 
