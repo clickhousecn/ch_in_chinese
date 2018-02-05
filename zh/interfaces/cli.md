@@ -1,6 +1,6 @@
-# Command-line client
+# 命令行客户端
 
-To work from the command line, you can use ` clickhouse-client`:
+通过命令行来访问 ClickHouse，您可以使用 `clickhouse-client`
 
 ```bash
 $ clickhouse-client
@@ -9,15 +9,15 @@ Connecting to localhost:9000.
 Connected to ClickHouse server version 0.0.26176.:)
 ```
 
-The client supports command-line options and configuration files. For more information, see "[Configuring](#interfaces_cli_configuration)".
+该客户端支持命令行参数以及配置文件。查看更多，请看 "[配置](#interfaces_cli_configuration)"
 
-## Usage
+## 使用方式
 
-The client can be used in interactive and non-interactive (batch) mode.
-To use batch mode, specify the 'query' parameter, or send data to 'stdin' (it verifies that 'stdin' is not a terminal), or both.
-Similar to the HTTP interface, when using the 'query' parameter and sending data to 'stdin', the request is a concatenation of the 'query' parameter, a line feed, and the data in 'stdin'. This is convenient for large INSERT queries.
+这个客户端可以选择使用交互式与非交互式（批量）两种模式。
+使用批量模式，要指定 `query` 参数，或者发送数据到 `stdin`（它会检查 `stdin` 是否是结束输入），或者两种同时使用。
+它与 HTTP 接口很相似，当使用 `query` 参数发送数据到 `stdin` 时，客户端请求就是一行一行的 `stdin` 输入作为 `query` 的参数。这种方式在大规模的插入请求中非常方便。
 
-Example of using the client to insert data:
+使用这个客户端插入数据的示例：
 
 ```bash
 echo -ne "1, 'some text', '2016-08-14 00:00:00'\n2, 'some more text', '2016-08-14 00:00:01'" | clickhouse-client --database=test --query="INSERT INTO test FORMAT CSV";
@@ -29,79 +29,80 @@ _EOF
 
 cat file.csv | clickhouse-client --database=test --query="INSERT INTO test FORMAT CSV";
 ```
-In batch mode, the default data format is TabSeparated. You can set the format in the FORMAT clause of the query.
 
-By default, you can only process a single query in batch mode. To make multiple queries from a "script," use the --multiquery parameter. This works for all queries except INSERT. Query results are output consecutively without additional separators.
-Similarly, to process a large number of queries, you can run 'clickhouse-client' for each query. Note that it may take tens of milliseconds to launch the 'clickhouse-client' program.
+在批量模式中，默认的数据格式是 Tab 分隔的。您可以根据查询来灵活设置 FORMAT 格式。
 
-In interactive mode, you get a command line where you can enter queries.
+默认情况下，在批量模式中您只能执行单个查询。为了从一个 Script 中执行多个查询，可以使用 `--multiquery` 参数。但这只在除了 INSERT 请求 中有用。查询结果会连续且不含分隔符地输出。
+同样的，为了执行大规模的查询，您可以为每个查询执行一次 `clickhouse-client`。但注意到每次启动 `clickhouse-client` 程序都需要消耗几十毫秒时间。
 
-If 'multiline' is not specified (the default):To run the query, press Enter. The semicolon is not necessary at the end of the query. To enter a multiline query, enter a backslash `\` before the line feed. After you press Enter, you will be asked to enter the next line of the query.
+在交互模式下，当您输入查询后，您都会得到一行命令。
 
-If multiline is specified:To run a query, end it with a semicolon and press Enter. If the semicolon was omitted at the end of the entered line, you will be asked to enter the next line of the query.
+如果 `multiline` 没有指定（默认没指定的）：为了执行查询，按下 Enter 即可。查询语句不是必须使用分号结尾。为了执行多个查询，可以在换行之前输入一个反斜杠` \ `，然后在您按下 Enter 键后，您就可以输入下一行查询 了。
 
-Only a single query is run, so everything after the semicolon is ignored.
+如果 `multiline` 指定了：为了执行查询，需要以分号结尾并且按下 Enter 键。如果分号被省略了，将要求您输入下一行查询。
 
-You can specify `\G` instead of or after the semicolon. This indicates Vertical format. In this format, each value is printed on a separate line, which is convenient for wide tables. This unusual feature was added for compatibility with the MySQL CLI.
+若只运行单个查询，分号后面的所有内容都会被忽略。
 
-The command line is based on 'readline' (and 'history' or 'libedit', or without a library, depending on the build). In other words, it uses the familiar keyboard shortcuts and keeps a history.
-The history is written to `~/.clickhouse-client-history`.
+您可以指定 `\G` 来替代分号或者在分号后面，这表示垂直状的格式。在这种格式下，每一个值都会打印在不同的行中，这种方式对于宽表来说很方便。这个不常见的特性是为了兼容 MySQL 命令而加的。
 
-By default, the format used is PrettyCompact. You can change the format in the FORMAT clause of the query, or by specifying `\G` at the end of the query, using the `--format` or `--vertical` argument in the command line, or using the client configuration file.
+命令行客户端是基于 `readline` 库（`history` 库或者 `libedit` 库, 或不基于其他库, 这取决于客户端是如何编译的）。换句话说，它可以使用我们熟悉的快捷键方式来操作以及保留历史命令。
+历史命令会写入在 `~/.clickhouse-client-history` 中。
 
-To exit the client, press Ctrl+D (or Ctrl+C), or enter one of the following instead of a query:"exit", "quit", "logout", "учше", "йгше", "дщпщге", "exit;", "quit;", "logout;", "учшеж", "йгшеж", "дщпщгеж", "q", "й", "q", "Q", ":q", "й", "Й", "Жй"
+默认情况下，输出的格式是 prettycompact。您可以通过 FORMAT 设置根据不同查询来修改格式，或者通过在查询末尾指定 `\G` 字符，或通过在命令行中使用 `--format` or `--vertical` 参数，或使用客户端的配置文件。
 
-When processing a query, the client shows:
+若要退出客户端，使用 Ctrl+D （或 Ctrl+C），或者输入以下其中一个命令：`exit`, `quit`, `logout`, `учше`, `йгше`, `дщпщге`, `exit;`, `quit;`, `logout;`, `учшеж`, `йгшеж`, `дщпщгеж`, `q`, `й`, `q`, `Q`, `:q`, `й`, `Й`, `Жй`
 
-1. Progress, which is updated no more than 10 times per second (by default). For quick queries, the progress might not have time to be displayed.
-2. The formatted query after parsing, for debugging.
-3. The result in the specified format.
-4. The number of lines in the result, the time passed, and the average speed of query processing.
+当执行一个查询的时候，客户端会显示：
 
-You can cancel a long query by pressing Ctrl+C. However, you will still need to wait a little for the server to abort the request. It is not possible to cancel a query at certain stages. If you don't wait and press Ctrl+C a second time, the client will exit.
+1. 进度, 进度会每秒更新十次 （默认情况下）。 对于很快的查询，进度可能没有时间显示。
+2. 为了调试会显示解析且格式化后的查询语句。
+3. 指定格式的输出结果。
+4. 输出结果的行数的行数，经过的时间，以及查询处理的速度。
 
-The command-line client allows passing external data (external temporary tables) for querying. For more information, see the section "External data for query processing".
+您可以通过 Ctrl+C 来取消一个长时间的查询。然而，您依然需要等待服务端来中止请求。在某个阶段去取消查询是不可能的。如果您不等待并再次按下 Ctrl + C，客户端将会退出。
+
+命令行客户端允许通过外部数据 （外部临时表） 来查询。更多相关信息，请参考 "[外部数据查询处理](../../table_engines/external_data.html)".
 
 <a name="interfaces_cli_configuration"></a>
 
-## Configure
+## 配置
 
-You can pass parameters to `clickhouse-client` (all parameters have a default value) using:
+您可以通过以下方式传入参数到 `clickhouse-client` 中 （所有的参数都有默认值）：
 
-- From the Command Line
+- 通过命令行
 
-   Command-line options override the default values and settings in configuration files.
+	命令行参数会覆盖默认值和配置文件的配置。
 
-- Configuration files.
+- 配置文件
 
-   Settings in the configuration files override the default values.
+	配置文件的配置会覆盖默认值
 
-### Command line options
+### 命令行参数
 
-- `--host, -h` -– The server name, 'localhost' by default.  You can use either the name or the IPv4 or IPv6 address.
-- `--port` – The port to connect to. Default value: 9000. Note that the HTTP interface and the native interface use different ports.
-- `--user, -u` – The username. Default value: default.
-- `--password` – The password. Default value: empty string.
-- `--query, -q` – The query to process when using non-interactive mode.
-- `--database, -d` – Select the current default database. Default value: the current database from the server settings ('default' by default).
-- `--multiline, -m` – If specified, allow multiline queries (do not send the query on Enter).
-- `--multiquery, -n` – If specified, allow processing multiple queries separated by commas. Only works in non-interactive mode.
-- `--format, -f` – Use the specified default format to output the result.
-- `--vertical, -E` – If specified, use the Vertical format by default to output the result. This is the same as '--format=Vertical'. In this format, each value is printed on a separate line, which is helpful when displaying wide tables.
-- `--time, -t` – If specified, print the query execution time to 'stderr' in non-interactive mode.
-- `--stacktrace` – If specified, also print the stack trace if an exception occurs.
-- `-config-file` – The name of the configuration file.
+- `--host, -h` -– 服务端的 host 名称, 默认是 'localhost'。  您可以选择使用 host 名称或者 IPv4 或 IPv6 地址。
+- `--port` – 连接的端口，默认值： 9000。注意 HTTP 接口以及本地接口是使用不同端口的。
+- `--user, -u` – 用户名。 默认值： default.
+- `--password` – 密码。 默认值： empty string.
+- `--query, -q` – 非交互模式下的查询语句.
+- `--database, -d` – 默认当前操作的数据库. 默认值： 服务端默认的配置 （默认是 `default`）.
+- `--multiline, -m` – 如果指定，允许多行语句查询（不要用 Enter 来发送查询语句）.
+- `--multiquery, -n` – 如果指定, 允许处理用逗号分隔的多个查询，只在非交互模式下生效。
+- `--format, -f` – 使用指定的默认格式输出结果。
+- `--vertical, -E` – 如果指定，默认情况下使用垂直格式输出结果。这与 '--format=Vertical' 相同。在这种格式中，每个值都在单独的行上打印，这种方式对显示宽表很有帮助。
+- `--time, -t` – 如果指定，非交互模式下会打印查询执行的时间到 'stderr' 中。
+- `--stacktrace` – 如果指定，如果出现异常，会打印堆栈跟踪信息。
+- `-config-file` – 配置文件的名称。
 
-### Configuration files
+### 配置文件
 
-`clickhouse-client`  uses the first existing file of the following:
+`clickhouse-client`  使用一下第一个存在的文件：
 
-- Defined in the `-config-file` parameter.
+- 通过 `-config-file` 参数指定的文件.
 - `./clickhouse-client.xml`
 - `\~/.clickhouse-client/config.xml`
 - `/etc/clickhouse-client/config.xml`
 
-Example of a config file:
+配置文件示例:
 
 ```xml
 <config>

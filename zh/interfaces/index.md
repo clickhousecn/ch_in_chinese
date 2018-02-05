@@ -1,8 +1,8 @@
-<a name="interfaces"></a>
+<a name="接口"></a>
 
-# Interfaces
+# 接口
 
-To explore the system's capabilities, download data to tables, or make manual queries, use the clickhouse-client program.
+为了探索 ClickHouse 的能力，如导入数据到表中，或做一些手动的查询，可以使用 clickhouse-client 命令行程序来完成
 
 ```eval_rst
 .. toctree::

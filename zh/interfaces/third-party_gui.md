@@ -1,16 +1,16 @@
-# Visual interfaces from third-party developers
+# 三方开发的可视化界面
 
 ## Tabix
 
-Web interface for ClickHouse in the [Tabix](https://github.com/tabixio/tabix) project.
+ClickHouse Web 界面 [Tabix](https://github.com/tabixio/tabix).
 
-Main features:
+主要功能:
 
-- Works with ClickHouse directly from the browser, without the need to install additional software.
-- Query editor with syntax highlighting.
-- Auto-completion of commands.
-- Tools for graphical analysis of query execution.
-- Color scheme options.
+- 浏览器直接连接 ClickHouse，不需要安装其他软件。
+- 高亮语法的编辑器。
+- 自动命令补全。
+- 查询命令执行的图形分析工具。
+- 配色方案选项。
 
-[Tabix documentation](https://tabix.io/doc/).
+[Tabix 文档](https://tabix.io/doc/).
 

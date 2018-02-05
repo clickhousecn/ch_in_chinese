@@ -132,7 +132,8 @@ html_theme_options = {
     'link': '#08f',
     'link_hover': 'red',
     'extra_nav_links': collections.OrderedDict([
-        ('Switch to Russian <img id="svg-flag" src="/docs/en/_static/ru.svg" width="20" height="12" />', '#ru'),
+        ('切换到英语 <img id="svg-flag" src="https://clickhouse.yandex/docs/en/_static/en.svg" width="20" height="12" />', 'https://clickhouse.yandex/docs/en/'),
+        ('切换到俄语 <img id="svg-flag" src="https://clickhouse.yandex/docs/ru/_static/ru.svg" width="20" height="12" />', 'https://clickhouse.yandex/docs/en/'),
         ('Single page documentation', '/docs/en/single/'),
         ('Website home', '/'),
         ('Source code', 'https://github.com/yandex/ClickHouse'),
