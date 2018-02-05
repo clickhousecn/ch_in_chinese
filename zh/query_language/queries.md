@@ -955,7 +955,7 @@ The query can only specify a single ARRAY JOIN clause.
 
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
-### JOIN clause
+### JOIN 语句
 
 The normal JOIN, which is not related to ARRAY JOIN described above.
 
@@ -1049,6 +1049,7 @@ In some cases, it is more efficient to use IN instead of JOIN.
 Among the various types of JOINs, the most efficient is ANY LEFT JOIN, then ANY INNER JOIN. The least efficient are ALL LEFT JOIN and ALL INNER JOIN.
 
 If you need a JOIN for joining with dimension tables (these are relatively small tables that contain dimension properties, such as names for advertising campaigns), a JOIN might not be very convenient due to the bulky syntax and the fact that the right table is re-accessed for every query. For such cases, there is an "external dictionaries" feature that you should use instead of JOIN. For more information, see the section "External dictionaries".
+
 
 ### WHERE clause
 
