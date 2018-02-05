@@ -39,13 +39,13 @@ MergeTree 允许使用任意的表达式作为 【可选的】 统一化表达�
 
 在实际工作时， MergeTree 将数据分割为小的切片作为单位进行处理。 每个切片之间依照主键排序。每个切片记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在切片内的数据有序。 
 
-切片之间的合并过程会在后台定期自动执行。在合并过程发生时 When merging, several parts are selected, usually the smallest ones, and then merged into one large sorted part.
+切片之间的合并过程会在后台定期自动执行。MergeTree 引擎会选择几个相邻的切片进行合并（通常是较小的切片）， 然后对二者合并、排序。
 
-In other words, incremental sorting occurs when inserting to the table. Merging is implemented so that the table always consists of a small number of sorted parts, and the merge itself doesn't do too much work.
+亦复如是, 向 MergeTree 表中插入数据会执行递增排序；其后，几个切片又会被合并为一个大型切片，以减少总体切片数量。 合并过程本身并无过多额外工作。
 
-During insertion, data belonging to different months is separated into different parts. The parts that correspond to different months are never combined. The purpose of this is to provide local data modification (for ease in backups).
+向 MergeTree 插入数据时，不同月份的数据会被自动分散在不同切片中。不同月份的切片不会被合并。这样一来，修改数据将会更加轻松。
 
-Parts are combined up to a certain size threshold, so there aren't any merges that are too long.
+切片合并时设有体积上限，故切片合并并不会产生过于庞大的新切片。
 
 For each part, an index file is also written. The index file contains the primary key value for every 'index_granularity' row in the table. In other words, this is an abbreviated index of sorted data.
 
