@@ -32,7 +32,7 @@ cat file.csv | clickhouse-client --database=test --query="INSERT INTO test FORMA
 
 在批量模式中，默认的数据格式是 `TabSeparated` 分隔的。您可以根据查询来灵活设置 FORMAT 格式。
 
-默认情况下，在批量模式中只能执行单个查询。为了从一个 Script 中执行多个查询，可以使用 `--multiquery` 参数。除了 INSERT 请求外，这种方式在任何地方有用。查询的结果会连续且不含分隔符地输出。
+默认情况下，在批量模式中只能执行单个查询。为了从一个 Script 中执行多个查询，可以使用 `--multiquery` 参数。除了 INSERT 请求外，这种方式在任何地方都有用。查询的结果会连续且不含分隔符地输出。
 同样的，为了执行大规模的查询，您可以为每个查询执行一次 `clickhouse-client`。但注意到每次启动 `clickhouse-client` 程序都需要消耗几十毫秒时间。
 
 在交互模式下，每条查询过后，你可以直接输入下一条查询命令。
@@ -81,11 +81,11 @@ cat file.csv | clickhouse-client --database=test --query="INSERT INTO test FORMA
 
 - `--host, -h` -– 服务端的 host 名称, 默认是 'localhost'。  您可以选择使用 host 名称或者 IPv4 或 IPv6 地址。
 - `--port` – 连接的端口，默认值： 9000。注意 HTTP 接口以及 TCP 原生接口是使用不同端口的。
-- `--user, -u` – 用户名。 默认值： default.
-- `--password` – 密码。 默认值： empty string.
+- `--user, -u` – 用户名。 默认值： default。
+- `--password` – 密码。 默认值： 空字符串。
 - `--query, -q` – 非交互模式下的查询语句.
-- `--database, -d` – 默认当前操作的数据库. 默认值： 服务端默认的配置 （默认是 `default`）.
-- `--multiline, -m` – 如果指定，允许多行语句查询（不要用 Enter 来发送查询语句）.
+- `--database, -d` – 默认当前操作的数据库. 默认值： 服务端默认的配置 （默认是 `default`）。
+- `--multiline, -m` – 如果指定，允许多行语句查询（Enter 仅代表换行，不代表查询语句完结）。
 - `--multiquery, -n` – 如果指定, 允许处理用逗号分隔的多个查询，只在非交互模式下生效。
 - `--format, -f` – 使用指定的默认格式输出结果。
 - `--vertical, -E` – 如果指定，默认情况下使用垂直格式输出结果。这与 '--format=Vertical' 相同。在这种格式中，每个值都在单独的行上打印，这种方式对显示宽表很有帮助。
