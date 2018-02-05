@@ -1,72 +1,75 @@
 <a name="aggregate_functions_parametric"></a>
 
-# Parametric aggregate functions
+# 带形参的聚合函数
 
-Some aggregate functions can accept not only argument columns (used for compression), but a set of parameters – constants for initialization. The syntax is two pairs of brackets instead of one. The first is for parameters, and the second is for arguments.
+一些聚合函数除了需要列的数据（用于压缩）外， 还需要另外一些常量来初始化，其语法为两个括号。第一对括号用于参数常量，第二对括号用于列数据。
+
+> 译者注：一般来说Parameter可以译作形参，Argument译作实参。在英语文档中第一对括号称之为Parameter，第二对括号称之为Argument，但其实和形参/实参的意义有一定的出入，更加像是为了保持语句清晰而弄的仿效高阶函数的语法糖；因为其实这些参数写在同一个括号也没有太大问题。为了区分这两种参数，以下还是勉为其难地将Parameter和Argument分别翻译成形参和实参。
 
 ## sequenceMatch(pattern)(time, cond1, cond2, ...)
 
-Pattern matching for event chains.
+用于事件链的模式匹配。
 
-`pattern` is a string containing a pattern to match. The pattern is similar to a regular expression.
+`pattern` 是一串包含了要匹配的模式的字符串。这个参数类似于正则表达式（但是和正则表达式毫无关系）。
 
-`time` is the time of the event with the DateTime type.
+`time` 是该事件发生的时间（DateTime类型）。
 
-`cond1`, `cond2` ... is from one to 32 arguments of type UInt8 that indicate whether a certain condition was met for the event.
+`cond1`, `cond2` ... 是 1 - 32 个 UInt8 条件，代表第1种到第32种事件发生的条件。
 
-The function collects a sequence of events in RAM. Then it checks whether this sequence matches the pattern.
-It returns UInt8: 0 if the pattern isn't matched, or 1 if it matches.
+该函数收集一连串事件并存储于内存中，然后检查该序列是否满足模式的条件。如果有则返回 1，没有则返回 0（均为 UInt8 ）。
 
-Example: `sequenceMatch ('(?1).*(?2)')(EventTime, URL LIKE '%company%', URL LIKE '%cart%')`
+示例：`sequenceMatch ('(?1).*(?2)')(EventTime, URL LIKE '%company%', URL LIKE '%cart%')`
 
-- whether there was a chain of events in which a pageview with 'company' in the address occurred earlier than a pageview with 'cart' in the address.
+- 是否存在一串的事件满足有人先访问了带有 'company' 的 URL，然后再访问了带有 'cart' 的URL
 
-This is a singular example. You could write it using other aggregate functions:
+这是一个单一的示例，我们完全可以正常的SQL来达到同样的效果：
 
 ```text
-minIf(EventTime, URL LIKE '%company%') < maxIf(EventTime, URL LIKE '%cart%').
+minIf(EventTime, URL LIKE '%company%') <maxIf(EventTime, URL LIKE '%cart%').
 ```
 
-However, there is no such solution for more complex situations.
+但是对于更复杂的例子，普通的SQL就爱莫能助了。
 
-Pattern syntax:
+模式语法：
 
-`(?1)` refers to the condition (any number can be used in place of 1).
+`(?1)` 对应着第一个条件（1 可以是 1 - 32 任何一个数值，只要相应的条件有定义）；
 
-`.*` is any number of any events.
+`.*` 是指任意数量的事件；
 
-`(?t>=1800)` is a time condition.
+`(?t>=1800)` 是一个时间限制，指任意事件可以发生在这段指定的时间内。1800可以换成任意的数值，`>=`也可以换成`<`， `>`和 `<=`。
 
-Any quantity of any type of events is allowed over the specified time.
+在同一秒发生的事件可以被当做任何的顺序。这可能会影响到sequenceMatch的结果。
 
-Instead of `>=`,  the following operators can be used:`<`, `>`, `<=`.
-
-Any number may be specified in place of 1800.
-
-Events that occur during the same second can be put in the chain in any order. This may affect the result of the function.
-
+> 译者注：
+> Alexey Milovidov 举了一个更详细的例子：https://gist.github.com/alexey-milovidov/3a429ab096d6fdbfd42f4862cafab017
+> 简单来说，假设 cond1 对应事件 A， cond2 对应事件 B，cond3 对应事件 C...可以把所有的行根据 EventTime 排列成
+> | T1 | T2 | T3 | T4 | T5 | T6 | ... | T100 |
+> | --- | --- |--- |--- |--- |--- |--- |--- |
+> | A | | | | A | | ... | |
+> |  | B | | | | | ... | B |
+> | | | | C | | C | ... | C |
+> sequenceMatch 可以用来查询这个列表里面，是否存在依照我们所写的模式发生的事件链。比如说 A 之后发生 B 之后发生 C，用 sequenceMatch 的模式来表示就是 `(?1).*(?2).*(?3)` ,其中 `.*` 表示 A 和 B，B 和 C 之间可以发生任意多次任何事件。上表中因为 T1 发生了 A，T2 发生了 B，T4 发生了 C，所以 sequenceMatch 会返回真。
 ## sequenceCount(pattern)(time, cond1, cond2, ...)
 
-Works the same way as the sequenceMatch function, but instead of returning whether there is an event chain, it returns UInt64 with the number of event chains found.
-Chains are searched for without overlapping. In other words, the next chain can start only after the end of the previous one.
+其原理与 sequenceMatch 相同，但返回的是存在多少这样的事件链满足条件。
+所有搜索出来的事件链是相互不重叠的；也就是说，后面的事件链只能在前一个事件链结束了再开始。
 
 ## uniqUpTo(N)(x)
 
-Calculates the number of different argument values ​​if it is less than or equal to N. If the number of different argument values is greater than N, it returns N + 1.
+如果不同的值少于或等于 N 个，返回不同的值的个数，否则返回 N+1。
 
-Recommended for use with small Ns, up to 10. The maximum value of N is 100.
+建议使用时 N <= 10，最大支持的 N 的值为 100。
 
-For the state of an aggregate function, it uses the amount of memory equal to 1 + N \* the size of one value of bytes.
-For strings, it stores a non-cryptographic hash of 8 bytes. That is, the calculation is approximated for strings.
+用于保存聚合函数状态时，该函数所需要的内存为 1 + N \* Byte的大小。
+对于字符串，该函数储存一个未经加密的 8 字节哈希——也就是说，对于字符串来说，这个计算仅仅是近似值。
+这个函数也支持多个参数。
 
-The function also works for several arguments.
+它的短路设计使得除了某些大 N 值然后结果刚好比N小一点点的极端情况，它会比 `uniq` 快，。
 
-It works as fast as possible, except for cases when a large N value is used and the number of unique values is slightly less than N.
-
-Usage example:
+使用示例：
 
 ```text
-Problem: Generate a report that shows only keywords that produced at least 5 unique users.
-Solution: Write in the GROUP BY query SearchPhrase HAVING uniqUpTo(4)(UserID) >= 5
-```
+问题描述：生成一个报表，里面列出至少包含 5 个不同用户的关键词
 
+解决方案：写一个GROUP BY 查询，HAVING uniqUpTo(4)(UserID) >= 5
+```
