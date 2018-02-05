@@ -1,4 +1,4 @@
-# Settings
+# 设置
 
 <a name="settings-distributed_product_mode"></a>
 

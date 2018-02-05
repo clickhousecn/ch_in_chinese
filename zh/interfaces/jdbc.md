@@ -1,4 +1,3 @@
-# JDBC driver
+# JDBC 驱动
 
-There is an official JDBC driver for ClickHouse. See [here](https://github.com/yandex/clickhouse-jdbc) .
-
+ClickHouse官方有 JDBC 的驱动。 见[这里](https://github.com/yandex/clickhouse-jdbc)。
