@@ -4,7 +4,7 @@
 
 MergeTree是ClickHouse特有的一种数据表引擎。
 
-MergeTree 允许您依据主键和日期创建索引，并为实时数据更新做了有力支撑。
+MergeTree 允许您依据主键和<a href="https://clickhouse.yandex/docs/en/operations/settings/settings.html?highlight=index#force-index-by-date">日期</a>创建索引，并为实时数据更新做了有力支撑。
 
 MergeTree 是 ClickHouse 里最为先进的表引擎。
 
