@@ -1,6 +1,6 @@
-# 三方开发的库
+# 第三方开发的库
 
-以下都是适用于 ClickHouse 的三方库：
+以下都是适用于 ClickHouse 的第三方库：
 
 - Python:
    - [infi.clickhouse_orm](https://github.com/Infinidat/infi.clickhouse_orm)
