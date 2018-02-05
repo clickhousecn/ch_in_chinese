@@ -955,7 +955,7 @@ The query can only specify a single ARRAY JOIN clause.
 
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
-### JOIN clause
+### JOIN 语句
 
 JOIN标准语句, 与ARRAY JOIN 关系不大.
 
@@ -1027,6 +1027,7 @@ USING 语句指定一个或多个列进行Join, 建立这些列的等值列. 列
 每次一个查询运行相同的 JOIN, 子查询再次运行 – 结果不被缓存. 为了避免这个, 使用特定的'Join' 表引擎, 它是一个预处理数组，在内存中进行join操作. 对于更多信息, 请查看章节 "表引擎, Join".
 
 如果你想要一个JOIN 来关联维度表 (这些是一些小表，包含维度属性, 如营销活动的名称), 一个 JOIN 可能并不是特别合适，由于 bulky 的语句，右表对于每个查询重新访问. 在这些场景下, 有一个 "外部字典" 特性，你应该使用它来替换 JOIN. 更多信息, 请查看章节 "外部字典".
+
 
 ### WHERE clause
 
