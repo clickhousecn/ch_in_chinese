@@ -29,14 +29,11 @@ MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)
 
 抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了用户 ID 的哈希作为特征表达式，旨在近乎随机地在 CounterID 和 EventDate 内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
-The sampling expression (optional) can be any expression. It must also be present in the primary key. The example uses a hash of user IDs to pseudo-randomly disperse data in the table for each CounterID and EventDate. In other words, when using the SAMPLE clause in a query, you get an evenly pseudo-random sample of data for a subset of users.
-在实际工作时， MergeTree 将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 
-
-索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
+数据表将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
 
 具体而言, 向 MergeTree 表中插入数据时，引擎会首先对新数据执行递增排序而保存索引块；其后，数据索引块之间又会进一步合并，以减少总体索引块数量。 因此，合并过程本身并无过多排序工作。
 
-向 MergeTree 插入数据时，不同月份的数据会被自动分散在不同索引块中。不同月份的索引块不会被合并。这样一来，修改小部分数据将会更加轻松。
+向 MergeTree 插入数据时，不同月份的数据会被自动分散在不同索引块中。不同月份的索引块不会被合并。这是为了便于本地化数据修改（以及备份）。
 
 索引块合并时设有体积上限，以避免索引块合并产生庞大的新索引块。
 
