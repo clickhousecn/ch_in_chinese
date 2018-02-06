@@ -12,10 +12,10 @@ MergeTree 是 ClickHouse 里最为先进的表引擎。
 
 MergeTree 引擎在创建时接收以下4个参数，
 
-- 一个 日期字段的名称 （索引字段）
-- 一个 统一化表达式 【可选的】
-- 一个 含有主键相关字段的元组
-- 一个 UInt64类型的数字，设置稀疏索引的粒度(见下文)。
+- 日期字段的名称 （索引字段）
+- 统一化表达式 【可选的】
+- 含有主键相关字段的元组
+- 稀疏索引的粒度（见下文）。
 
 就像这样：
 
@@ -71,7 +71,7 @@ SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDat
 SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
 ```
 
-若要知晓 MergeTree 能否在查询中使用索引, 请配置设置参数 [ force_index_by_date](../operations/settings/settings.md#settings-settings-force_index_by_date)  、 [ force_primary_key](../operations/settings/settings.md#settings-settings-force_primary_key).
+若要知晓 MergeTree 能否在查询中使用索引, 请配置系统参数 [ force_index_by_date](../operations/settings/settings.md#settings-settings-force_index_by_date)  、 [ force_primary_key](../operations/settings/settings.md#settings-settings-force_primary_key).
 
 
 全局的索引之中仅仅保存了单个数据索引块的日期范围。然而，一个数据索引块可能包含很多日期的数据（甚乎整月），MergeTree 在数据索引块内部依照主键排序，然而用于分组的日期并不一定在数据表的首列。因此，在查询语句中，如果只有日期范围而没有限定主键范围，这将可能导致不必要的数据读取。
