@@ -17,15 +17,15 @@ MergeTree 引擎在创建时接收以下4个参数，
 - 含有主键相关字段的元组
 - 稀疏索引的粒度（见下文）。
 
-## 示例贴：
+示例贴：
 
-### 不使用特征表达式的例子
+不使用特征表达式的例子
 
 ```sql
 MergeTree(EventDate, (CounterID, EventDate), 8192)
 ```
 
-### 使用特征表达式的例子
+使用特征表达式的例子
 
 ```sql
 MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
@@ -63,7 +63,7 @@ SELECT count() FROM table WHERE EventDate = toDate(now()) AND (CounterID = 34 OR
 SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDate <= toDate('2014-01-31')) OR EventDate = toDate('2014-05-01')) AND CounterID IN (101500, 731962, 160656) AND (CounterID = 101500 OR EventDate != toDate('2014-05-01'))
 ```
 
-## 示例贴：
+示例贴：
 
 可以看到，下面的例子中， MergeTree 无法使用索引。
 
