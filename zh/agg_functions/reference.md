@@ -16,10 +16,10 @@
 
 某些情况下可以保证顺序，比如当 SELECT 来自一个有 ORDER BY 的子查询。
 
-当一个 `SELECT` 查询有 `GROUP BY` 语句，或者至少一个聚合函数， 与 MySQL 不同的是，ClickHouse 要求所有在 `SELECT`, `HAVING`, 和 `ORDER BY` 的表达式必须来自 `GROUP BY` 的键，或者来自聚合函数。也就是说，每一个被 SELECT 的列必须要不用在 `GROUP BY` 键上或者在聚合函数里面。要实现MySQL的行为，可以使用 `any`。
+当一个 `SELECT` 查询有 `GROUP BY` 语句，或者至少一个聚合函数， 与 MySQL 不同的是，ClickHouse 要求所有在 `SELECT`, `HAVING`, 和 `ORDER BY` 的表达式必须来自 `GROUP BY` 的键，或者来自聚合函数。也就是说，每一个被 SELECT 的列必须要不用在 `GROUP BY` 键上或者在聚合函数里面。要实现 MySQL 的行为，可以使用 `any`。
 
 ## anyHeavy
-利用[heavy hitters](http://www.cs.umd.edu/~samir/498/karp.pdf)算法寻找一个频繁出现的值。如果有一个值在每个查询线程都有超过一半的出现概率，将会返回该值。通常结果是不确定的。
+利用 [heavy hitters](http://www.cs.umd.edu/~samir/498/karp.pdf) 算法寻找一个频繁出现的值。如果有一个值在每个查询线程都有超过一半的出现概率，将会返回该值。通常结果是不确定的。
 
 ```
 anyHeavy(column)
@@ -31,7 +31,7 @@ anyHeavy(column)
 
 **示例**
 
-使用[OnTime](../getting_started/example_datasets/ontime.md#example_datasets-ontime)数据集，用`AirlineID`查询频繁出现的航班。
+使用 [OnTime](../getting_started/example_datasets/ontime.md#example_datasets-ontime) 数据集，用 `AirlineID` 查询频繁出现的航班。
 
 ```sql
 SELECT anyHeavy(AirlineID) AS res
@@ -109,7 +109,7 @@ GROUP BY timeslot
 
 ## avg(x)
 
-求平均值。只适用于数值。结果类型为Float64。
+求平均值。只适用于数值。结果类型为 Float64。
 
 ## uniq(x)
 
@@ -118,15 +118,15 @@ GROUP BY timeslot
 该函数使用一个自适应采样算法，计算状态所用的 hash 大小最大为 65536。
 当数据量比较小的时候（小于 65536）这个算法能提供非常准确的结果和高效的 CPU 使用率（使用不太多这种函数进行计算时，`uniq` 的速度几乎与其它聚合函数相当）。
 
-其结果是确定性的（不受查询执行顺序影响）。
+其结果是确定的（不受查询执行顺序影响）。
 
 ## uniqCombined(x)
 
-近似求不同值个数。适用类型包括数值，字符串，日期，日期与时间，多参数和tuple参数。
+近似求不同值个数。适用类型包括数值，字符串，日期，日期与时间，多参数和 tuple 参数。
 
-这个函数用了三种不同的算法：数组，哈希表和带有误差修正表的[HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog)。其内存使用时 `uniq` 的几分之一，准确性是其几倍有余，但速度会稍微慢一点，尽管有时它甚至更快，比如传输大量聚合状态的分布式查询中。最大聚合状态是 96 KiB (HyperLogLog of 217 6-bit cells).
+这个函数用了三种不同的算法：数组，哈希表和带有误差修正表的[HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog)。其内存使用是 `uniq` 的几分之一，准确性是其几倍有余，但速度会稍微慢一点，尽管有时它甚至更快，比如传输大量聚合状态的分布式查询中。最大聚合状态是 96 KiB (HyperLogLog of 217 6-bit cells).
 
-其结果是确定性的（不受查询执行顺序影响）。
+其结果是确定的（不受查询执行顺序影响）。
 
 `uniqCombined` 是个很好的统计不同值个数的默认选择。
 
@@ -135,7 +135,7 @@ GROUP BY timeslot
 使用[HyperLogLog](https://en.wikipedia.org/wiki/HyperLogLog)算法来近似求不同值个数。
 用了212 5-bit cells。每个状态的大小略微大于2.5 KB.
 
-其结果是确定性的（不受查询执行顺序影响）。
+其结果是确定的（不受查询执行顺序影响）。
 
 大多数情况下，使用`uniq`和`uniqCombined`足矣。
 
@@ -146,7 +146,7 @@ GROUP BY timeslot
 在大数据的环境中，使用近似值一般没有什么问题，所以建议还是使用 `uniq` 函数。
 如果你真的需要准确值，可以使用 `uniqExact` 函数。
 
-`uniqExact` 函数相比于 `uniq` 需要更多的内存，因为其聚合状态的大小随着不同的值的个数增长而增长，并没有上限。
+`uniqExact` 函数相比于 `uniq` 需要更多的内存，因为其聚合状态（哈希表）的大小随着不同的值的个数增长而增长，并没有上限。
 
 ## groupArray(x), groupArray(max_size)(x)
 
@@ -173,10 +173,11 @@ GROUP BY timeslot
 > ['0','','1','','2','','3','','4','','5','','6','','7','','8','','9']
 > ```
 > 大概就可以理解这个函数究竟是什么黑魔法了。
+> 上述例子省略了可选形参 (default, len)，其作用下文叙述。
 
 将一个值插入数组的指定位置。
 
-该函数有两个参数：值和位置。如果多于一行算出来的位置是相同的话（比如说pos是个常数，`groupArrayInsertAt(value, 3) FROM (...)`），那么生成的数组的那个位置的值有可能是这些行的值的任意一个（在单线程环境下，值会是第一个）。如果某个位置并没有被赋值，将使用空字符串或者零之类的默认值。
+该函数有两个参数：值和位置。如果多于一行 pos 是相同的话（比如说 pos 是个常数，`groupArrayInsertAt(value, 3) FROM (...)`），那么结果数组中位置在 pos 的值有可能是这些行的值的任意一个（在单线程环境下，值会是第一个）。如果某个位置并没有被赋值，将使用空字符串或者零之类的默认值。
 
 可选的形参：
 
@@ -208,7 +209,7 @@ GROUP BY timeslot
 
 ## quantileDeterministic(level)(x, determinator)
 
-原理与 `quantile` 相同，只是结果是确定性的，并不依赖查询执行的顺序。
+原理与 `quantile` 相同，只是结果是确定的，并不依赖查询执行的顺序。
 
 为了实现这种效果，函数需要第二个参数determinator；该参数的哈希值用于水塘抽样法的随机数生成器的种子。为了让该函数正确地执行，同一个determinator不能被频繁地使用。作为例子，你可以使用事件ID或者用户ID。
 
@@ -233,7 +234,7 @@ GROUP BY timeslot
 
 返回的结果的类型为 Float32。如果该函数并没有接收到任何数值（比如，当使用 `quantileTimingIf` 而所有行的条件都不符合的时候），函数将返回 'nan'。这样做的目的是区分数值为0与没有数值的情况。另见 "ORDER BY clause" 关于 NaN 排序的注解。
 
-其结果是确定性的（不受查询执行顺序影响）。
+其结果是确定的（不受查询执行顺序影响）。
 
 当使用这个函数来求页面加载速度的分位值时，其速度与精确度都好于 `quantile` 函数。
 

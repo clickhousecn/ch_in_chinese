@@ -18,7 +18,7 @@
 
 该函数收集一连串事件并存储于内存中，然后检查该序列是否满足模式的条件。如果有则返回 1，没有则返回 0（均为 UInt8 ）。
 
-示例：`sequenceMatch ('(?1).*(?2)')(EventTime, URL LIKE '%company%', URL LIKE '%cart%')`
+示例： `sequenceMatch ('(?1).*(?2)')(EventTime, URL LIKE '%company%', URL LIKE '%cart%')`
 
 - 是否存在一串的事件满足有人先访问了带有 'company' 的 URL，然后再访问了带有 'cart' 的URL
 
@@ -43,12 +43,15 @@ minIf(EventTime, URL LIKE '%company%') <maxIf(EventTime, URL LIKE '%cart%').
 > 译者注：
 > Alexey Milovidov 举了一个更详细的例子：https://gist.github.com/alexey-milovidov/3a429ab096d6fdbfd42f4862cafab017
 > 简单来说，假设 cond1 对应事件 A， cond2 对应事件 B，cond3 对应事件 C...可以把所有的行根据 EventTime 排列成
+> 
 > | T1 | T2 | T3 | T4 | T5 | T6 | ... | T100 |
 > | --- | --- |--- |--- |--- |--- |--- |--- |
 > | A | | | | A | | ... | |
 > |  | B | | | | | ... | B |
 > | | | | C | | C | ... | C |
+> 
 > sequenceMatch 可以用来查询这个列表里面，是否存在依照我们所写的模式发生的事件链。比如说 A 之后发生 B 之后发生 C，用 sequenceMatch 的模式来表示就是 `(?1).*(?2).*(?3)` ,其中 `.*` 表示 A 和 B，B 和 C 之间可以发生任意多次任何事件。上表中因为 T1 发生了 A，T2 发生了 B，T4 发生了 C，所以 sequenceMatch 会返回真。
+
 ## sequenceCount(pattern)(time, cond1, cond2, ...)
 
 其原理与 sequenceMatch 相同，但返回的是存在多少这样的事件链满足条件。
@@ -58,7 +61,7 @@ minIf(EventTime, URL LIKE '%company%') <maxIf(EventTime, URL LIKE '%cart%').
 
 如果不同的值少于或等于 N 个，返回不同的值的个数，否则返回 N+1。
 
-建议使用时 N <= 10，最大支持的 N 的值为 100。
+建议 N <= 10，最大支持的 N 的值为 100。
 
 用于保存聚合函数状态时，该函数所需要的内存为 1 + N \* Byte的大小。
 对于字符串，该函数储存一个未经加密的 8 字节哈希——也就是说，对于字符串来说，这个计算仅仅是近似值。
