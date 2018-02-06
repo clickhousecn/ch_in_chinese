@@ -11,13 +11,13 @@
 - 含有主键相关字段的元组
 - 稀疏索引的粒度（见下文）。示例：
 
-不使用采样表达式的例子
+不使用采样表达式的例子：
 
 ```sql
 MergeTree(EventDate, (CounterID, EventDate), 8192)
 ```
 
-使用采样表达式的例子
+使用采样表达式的例子：
 
 ```sql
 MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
@@ -27,7 +27,7 @@ MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)
 
 主键可以是任意表达式构成的元组（通常是列名称的元组），或者是单独一个字段。
 
-抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了 `CounterID` 的哈希 `intHash32` 作为特征表达式，旨在近乎随机地在 `CounterID` 和 `EventDate` 内打乱数据条目。换而言之，当我们在查询中使用 `SAMPLE` 子句时，我们就可以得到一个近乎随机分布的用户列表。
+抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了 `CounterID` 的哈希 `intHash32` 作为采样表达式，旨在近乎随机地在 `CounterID` 和 `EventDate` 内打乱数据条目。换而言之，当我们在查询中使用 `SAMPLE` 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
 数据表将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
 
