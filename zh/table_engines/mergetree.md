@@ -37,17 +37,24 @@ MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)
 
 MergeTree 允许使用任意的表达式作为 【可选的】 统一化表达式 。 这个表达式必须在主键（元组）中；上面的例子使用了用户ID的哈希作为统一化表达式，旨在近乎随机地在 CounterID 和指定日期范围内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
-在实际工作时， MergeTree 将数据分割为小的切片作为单位进行处理。 每个切片之间依照主键排序。每个切片记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在切片内的数据有序。 
+在实际工作时， MergeTree 将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 
 
-切片之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的切片进行合并（通常是较小的切片）， 然后对二者合并、排序。
+索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
 
-具体而言, 向 MergeTree 表中插入数据时，引擎会首先对新数据执行递增排序而保存切片；其后，数据切片之间又会进一步合并，以减少总体切片数量。 因此，合并过程本身并无过多排序工作。
+具体而言, 向 MergeTree 表中插入数据时，引擎会首先对新数据执行递增排序而保存索引块；其后，数据索引块之间又会进一步合并，以减少总体索引块数量。 因此，合并过程本身并无过多排序工作。
 
-向 MergeTree 插入数据时，不同月份的数据会被自动分散在不同切片中。不同月份的切片不会被合并。这样一来，修改小部分数据将会更加轻松。
+向 MergeTree 插入数据时，不同月份的数据会被自动分散在不同索引块中。不同月份的索引块不会被合并。这样一来，修改小部分数据将会更加轻松。
 
-切片合并时设有体积上限，以避免切片合并产生庞大的新切片。
+索引块合并时设有体积上限，以避免索引块合并产生庞大的新索引块。
 
-除了保存切片中的数据外, 引擎会额外保存一个索引文件。The index file contains the primary key value for every 'index_granularity' row in the table. In other words, this is an abbreviated index of sorted data.
+除了保存索引块中的数据外, 引擎会额外保存一个索引文件。The index file contains the primary key value for every 'index_granularity' row in the table. In other words, this is an abbreviated index of sorted data.
+
+
+对列来说，在每一个索引块里的数据也写入了标记，从而让数据可以在明确的数值范围内被查找到。
+
+当读表里的数据时，SELECT查询会被转化为要使用哪些索引。这些索引会被用在判断where条件或者prewhere条件中，来判断是否打中了这些索引区间。
+
+  因此，能够快速查询一个或多个主键范围的值。在下面的示例中，能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
 
 For columns, "marks" are also written to each 'index_granularity' row so that data can be read in a specific range.
 
@@ -56,13 +63,35 @@ An index can be used if the WHERE or PREWHERE clause has an expression (as one o
 
 Thus, it is possible to quickly run queries on one or many ranges of the primary key. In the example given, queries will work quickly for a specific counter, for a specific counter and range of dates, for a specific counter and date, for multiple counters and a range of dates, and so on.
 
+
 ```sql
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND CounterID = 34
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND (CounterID = 34 OR CounterID = 42)
 SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDate <= toDate('2014-01-31')) OR EventDate = toDate('2014-05-01')) AND CounterID IN (101500, 731962, 160656) AND (CounterID = 101500 OR EventDate != toDate('2014-05-01'))
 ```
 
+示例贴：
+
+
+下面的例子中，索引不会被用到。
+
+select count() from table where counterId = 34 or url like '%upyachka%'
+
+  日期索引只能读出包含日期查询条件的语句。然而，一个数据part可能包含很多日期的数据，在一个单一的part里，数据是按照主键进行排序的，可能不会将日期作为第一列。因此，如果查询中只是加了日期范围限定没有加主键的限定会导致遍历更多的数据行。
+
+  对于同时读和更新的表，插入操作不会阻塞读的操作。
+
+  读表的行为自动就是并行化的。
+
+  有额外的merge步骤来支持最优化的查询。
+
+  可以用一个很大的单表来不断的往里添加数据。
+
+  数据负值在mergetree这种表引擎中也是支持的，详细看下面的部分 ““data replication””
+
 All of these cases will use the index by date and by primary key. The index is used even for complex expressions. Reading from the table is organized so that using the index can't be slower than a full scan.
+所有的这些示例都是用了日期索引和主键。索引会被用到复杂的表达式计算中，所以读一个组织结构化的表不会比全表扫描慢。
+
 
 In this example, the index can't be used:
 
@@ -113,7 +142,7 @@ MergeTree(  EventDate,  intHash32  (UserId),  CounterID,   EventDate,  intHash32
 
 
 合并过程
- 一张MergeTree表由很多个Part (单列的数据切片) 构成。每一个part按照内部对数据按照主键进行了排序。除此之外，每一个Part含有一个最小日期和最大日期。当插入数据的时候，会将插入的数据创建在一个新的Part 之中。
+ 一张 MergeTree 表由很多个 Part (单列的数据索引块) 构成。每一个part按照内部对数据按照主键进行了排序。除此之外，每一个Part含有一个最小日期和最大日期。当插入数据的时候，会将插入的数据创建在一个新的Part 之中。
 
     同时会在后台周期性的进行merge的过程，当merge的时候，很多个part会被选中，通常是最小的一些part，然后merge成为一个大的排好序的part。
 
@@ -130,23 +159,3 @@ MergeTree(  EventDate,  intHash32  (UserId),  CounterID,   EventDate,  intHash32
   当读表里的数据时，SELECT查询会被转化为要使用哪些索引。这些索引会被用在判断where条件或者prewhere条件中，来判断是否打中了这些索引区间。
 
   因此，能够快速查询一个或多个主键范围的值。在下面的示例中，能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
-
-示例贴：
-
-  所有的这些示例都是用了日期索引和主键。索引会被用到复杂的表达式计算中，所以读一个组织结构化的表不会比全表扫描慢。
-
-下面的例子中，索引不会被用到。
-
-select count() from table where counterId = 34 or url like '%upyachka%'
-
-  日期索引只能读出包含日期查询条件的语句。然而，一个数据part可能包含很多日期的数据，在一个单一的part里，数据是按照主键进行排序的，可能不会将日期作为第一列。因此，如果查询中只是加了日期范围限定没有加主键的限定会导致遍历更多的数据行。
-
-  对于同时读和更新的表，插入操作不会阻塞读的操作。
-
-  读表的行为自动就是并行化的。
-
-  有额外的merge步骤来支持最优化的查询。
-
-  可以用一个很大的单表来不断的往里添加数据。
-
-  数据负值在mergetree这种表引擎中也是支持的，详细看下面的部分 ““data replication””
