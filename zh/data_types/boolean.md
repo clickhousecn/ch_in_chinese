@@ -1,4 +1,3 @@
 # Boolean values
 
-There isn't a separate type for boolean values. They use the UInt8 type, restricted to the values 0 or 1.
-
+没有单独的类型来存储 boolean 值。可以使用 UInt8 类型，严格控制值为 0 或 1。

@@ -1,17 +1,17 @@
 # Float32, Float64
 
-[Floating point numbers](https://en.wikipedia.org/wiki/IEEE_754).
+[浮点数](https://en.wikipedia.org/wiki/IEEE_754)。
 
-Types are equivalent to types of C:
+类型与以下 C 类型是相同的：
 
 - `Float32` - `float`
 - `Float64`  - ` double`
 
-We recommend that you store data in integer form whenever possible. For example, convert fixed precision numbers to integer values, such as monetary amounts or page load times in milliseconds.
+我们建议，如果可能的话尽量用整形来存储数据。比如，将一定精度的浮点数转换成整形，譬如货币金额或者毫秒单位的加载时间。
 
-## Using floating-point numbers
+## 使用浮点数
 
-- Computations with floating-point numbers might produce a rounding error.
+- 对浮点数进行计算可能引起四舍五入的误差。
 
    ```sql
    SELECT 1 - 0.9
@@ -23,17 +23,18 @@ We recommend that you store data in integer form whenever possible. For example,
   └─────────────────────┘
    ```
 
-- The result of the calculation depends on the calculation method (the processor type and architecture of the computer system).
+- 计算的结果取决于计算方式（处理器类型和计算机系统架构）
 
 - Floating-point calculations might result in numbers such as infinity (`Inf`) and "not-a-number" (`NaN`). This should be taken into account when processing the results of calculations.
+- 浮点数计算可能出现这样的结果，比如 "infinity" （`Inf`） 和 "not-a-number" （`NaN`）。对浮点数计算的时候应该考虑到这点。
 
-- When reading floating point numbers from rows, the result might not be the nearest machine-representable number.
+- 当一行行阅读浮点数的时候，浮点数的结果可能不是机器最近显示的数值。
 
-## NaN and Inf
+## NaN 和 Inf
 
-In contrast to standard SQL, ClickHouse supports the following categories of floating-point numbers:
+相比于 SQL，ClickHouse 支持以下几种浮点数分类：
 
-- `Inf` – Infinity.
+- `Inf` – 正无穷。
 
    ```sql
    SELECT 0.5 / 0
@@ -44,7 +45,7 @@ In contrast to standard SQL, ClickHouse supports the following categories of flo
   │            inf │
   └────────────────┘
    ```
-- `-Inf` – Negative infinity.
+- `-Inf` – 负无穷。
 
    ```sql
    SELECT -0.5 / 0
@@ -55,7 +56,7 @@ In contrast to standard SQL, ClickHouse supports the following categories of flo
   │            -inf │
   └─────────────────┘
    ```
-- `NaN` – Not a number.
+- `NaN` – 非数字。
 
    ```
    SELECT 0 / 0
@@ -67,5 +68,5 @@ In contrast to standard SQL, ClickHouse supports the following categories of flo
   └──────────────┘
    ```
 
-   See the rules for ` NaN` sorting in the section [ORDER BY clause](../query_language/queries.md#query_language-queries-order_by).
+   See the rules for ` NaN` sorting in the section [ORDER BY 子句](../query_language/queries.md#query_language-queries-order_by).
 

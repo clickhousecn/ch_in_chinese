@@ -1,12 +1,11 @@
 # String
 
-Strings of an arbitrary length. The length is not limited. The value can contain an arbitrary set of bytes, including null bytes.
-The String type replaces the types VARCHAR, BLOB, CLOB, and others from other DBMSs.
+字符串可以任意长度的。它可以包含任意的字节组合，包括空字符。
+String 类型替代了其他 DBMSs 中的 VARCHAR， BLOB， CLOB 等类型。
 
-## Encodings
+## 编码
 
-ClickHouse doesn't have the concept of encodings. Strings can contain an arbitrary set of bytes, which are stored and output as-is.
-If you need to store texts, we recommend using UTF-8 encoding. At the very least, if your terminal uses UTF-8 (as recommended), you can read and write your values without making conversions.
-Similarly, certain functions for working with strings have separate variations that work under the assumption that the string contains a set of bytes representing a UTF-8 encoded text.
-For example, the 'length' function calculates the string length in bytes, while the 'lengthUTF8' function calculates the string length in Unicode code points, assuming that the value is UTF-8 encoded.
-
+ClickHouse 没有编码的概念。字符串可以是任意的字节组合，按它们原本的方式进行存储和输出。
+若需存储文本，我们建议使用 UTF-8 编码。至少，如果你的终端使用UTF-8（推荐），这样读写就不需要进行任何的转换了。
+同样，对不同的编码文本 ClickHouse 会有不同处理字符串的函数。
+比如，'length' 函数可以计算字符串包含的字节数组的长度，然而 'lengthUTF8' 函数是假设字符串以 UTF-8 编码，计算的是字符串包含的 Unicode 字符的长度。

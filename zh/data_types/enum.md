@@ -1,31 +1,32 @@
 # Enum
 
-Enum8 or Enum16. A finite set of string values that can be stored more efficiently than the `String` data type.
+`Enum8` 或者 `Enum16`。 一组有限的字符串值，比 `String` 类型的存储更加有效。
 
-Example:
+示例:
 
 ```text
 Enum8('hello' = 1, 'world' = 2)
 ```
 
-- A data type with two possible values: 'hello' and 'world'.
+- 一个类型可以表示两个值: 'hello' and 'world'。
 
-Each of the values is assigned a number in the range `-128 ... 127` for `Enum8` or in the range `-32768 ... 32767` for `Enum16`. All the strings and numbers must be different. An empty string is allowed. If this type is specified (in a table definition), numbers can be in an arbitrary order. However, the order does not matter.
+`Enum8` 类型的每个值范围是 `-128 ... 127`，`Enum16` 类型的每个值范围是 `-32768 ... 32767`。所有的字符串或者数字都必须是不一样的。允许存在空字符串。如果某个类型被指定了（在表定义的时候），数字可以是任意顺序。然后，顺序并不重要。
 
-In RAM, this type of column is stored in the same way as `Int8` or `Int16`  of the corresponding numerical values.
-When reading in text form, ClickHouse parses the value as a string and searches for the corresponding string from the set of Enum values. If it is not found, an exception is thrown. When reading in text format, the string is read and the corresponding numeric value is looked up. An exception will be thrown if it is not found.
-When writing in text form, it writes the value as the corresponding string. If column data contains garbage (numbers that are not from the valid set), an exception is thrown. When reading and writing in binary form, it works the same way as for Int8 and Int16 data types.
-The implicit default value is the value with the lowest number.
+在内存中，Enum 类型当做 `Int8` or `Int16` 对应的数值来存储。
+当以文本方式读取的时候，ClickHouse 将值解析成字符串然后去 Enum 值的集合中搜索对应字符串。如果没有找到，会抛出异常。当读取文本格式的时候，会根据读取到的字符串去找对应的数值。如果没有找到，会抛出异常。
 
-During `ORDER BY`, `GROUP BY`, `IN`, `DISTINCT` and so on, Enums behave the same way as the corresponding numbers. For example, ORDER BY sorts them numerically. Equality and comparison operators work the same way on Enums as they do on the underlying numeric values.
+当以文本方式写入的时候，ClickHouse 将值解析成字符串写入。如果  column 数据包含垃圾（不是从有用集合含有的数值），会抛弃异常。Enum 类型以二进制读取和写入的方式与 Int8 和 Int16 类型一样的。
+隐式默认值是对应类型的最小值。
 
-Enum values cannot be compared with numbers. Enums can be compared to a constant string. If the string compared to is not a valid value for the Enum, an exception will be thrown. The IN operator is supported with the Enum on the left hand side and a set of strings on the right hand side. The strings are the values of the corresponding Enum.
+在 `ORDER BY`, `GROUP BY`, `IN`, `DISTINCT` 中，Enums 和对应数值是一样的工作方式。比如， ORDER BY 会将它们按数值排序。对 Enums 类型使用相同和比较操作符都与操作它们隐含的数值是一样的。
 
-Most numeric and string operations are not defined for Enum values, e.g. adding a number to an Enum or concatenating a string to an Enum.
-However, the Enum has a natural `toString` function that returns its string value.
+Enum 值不能和数值相对比。Enums 可以和一个常量字符串对比。如果字符串不是一个可用的 Enum 值，会抛出异常。IN 运算符可以支持将 Enum 放到左边，字符串集合放到右边。字符串表示对于 Enum 类型的值。
 
-Enum values are also convertible to numeric types using the `toT` function, where T is a numeric type. When T corresponds to the enum’s underlying numeric type, this conversion is zero-cost.
-The Enum type can be changed without cost using ALTER, if only the set of values is changed. It is possible to both add and remove members of the Enum using ALTER (removing is safe only if the removed value has never been used in the table). As a safeguard, changing the numeric value of a previously defined Enum member will throw an exception.
+大部分数字运算和字符串运算都没有给 Enum 类型定义，比如，给 Enum 类型加一个数或给 Enum 类型连接一个字符串。然后，Enum 类型含有 `toString` 方法返回它的字符串。
 
-Using ALTER, it is possible to change an Enum8 to an Enum16 or vice versa, just like changing an Int8 to Int16.
+Enum 值使用 `toT` 函数可以转换成数值类型，其中 T 是一个数值类型。若 `T` 恰好对应 Enum 的底层数值类型，这个转换是零消耗的。
+
+Enum 类型可以被 `ALTER` 无成本地修改对应集合的值。可以通过 `ALTER` 操作来增加或删除 Enum 的成员（只要表没有用到该值，删除都是安全的）。作为安全保障，改变之前使用过的 Enum 成员将抛出异常。
+
+通过 `ALTER` 操作，可以将 `Enum8` 转成 `Enum16`，反之亦然，就像 `Int8` 转 `Int16`一样。
 
