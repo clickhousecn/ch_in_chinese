@@ -23,12 +23,13 @@ MergeTree(EventDate, (CounterID, EventDate), 8192)
 MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
 ```
 
-任意一个MergeTree引擎的数据表必须含有一个独立的日期型字段（而非日期时间型字段）。
+以 MergeTree 作为引擎的数据表必须含有一个独立的日期型字段。比如说， EventDate 字段。这个日期字段必须是 Date 类型的（非 DateTime 类型）。
 
 主键可以是任意表达式构成的元组（通常是列名称的元组），或者是单独一个字段。
 
-MergeTree 允许使用任意的表达式作为 【可选的】 采样表达式 。 这个表达式必须在主键（元组）中；上面的例子使用了用户ID的哈希作为采样表达式，旨在近乎随机地在 CounterID 和指定日期范围内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
+抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了用户 ID 的哈希作为特征表达式，旨在近乎随机地在 CounterID 和 EventDate 内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
+The sampling expression (optional) can be any expression. It must also be present in the primary key. The example uses a hash of user IDs to pseudo-randomly disperse data in the table for each CounterID and EventDate. In other words, when using the SAMPLE clause in a query, you get an evenly pseudo-random sample of data for a subset of users.
 在实际工作时， MergeTree 将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 
 
 索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
