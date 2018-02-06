@@ -2,30 +2,22 @@
 
 # MergeTree
 
-MergeTree 是 ClickHouse 特有的一种数据表引擎。
-
-MergeTree 允许您依据主键和日期创建索引，并进行实时的数据更新操作。
-
-MergeTree 是 ClickHouse 里最为先进的表引擎。
-
-请注意不要将 MergeTree 跟 Merge 引擎混淆。
+MergeTree 允许您依据主键和日期创建索引，并进行实时的数据更新操作。MergeTree 是 ClickHouse 里最为先进的表引擎。请注意不要将 MergeTree 跟 Merge 引擎混淆。
 
 MergeTree 引擎在创建时接收以下4个参数，
 
 - 日期字段的名称 （索引字段）
-- 特征表达式 【可选的】
+- 采样表达式 【可选的】
 - 含有主键相关字段的元组
-- 稀疏索引的粒度（见下文）。
+- 稀疏索引的粒度（见下文）。示例：
 
-示例贴：
-
-不使用特征表达式的例子
+不使用采样表达式的例子
 
 ```sql
 MergeTree(EventDate, (CounterID, EventDate), 8192)
 ```
 
-使用特征表达式的例子
+使用采样表达式的例子
 
 ```sql
 MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
@@ -35,7 +27,7 @@ MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)
 
 主键可以是任意表达式构成的元组（通常是列名称的元组），或者是单独一个字段。
 
-MergeTree 允许使用任意的表达式作为 【可选的】 特征表达式 。 这个表达式必须在主键（元组）中；上面的例子使用了用户ID的哈希作为特征表达式，旨在近乎随机地在 CounterID 和指定日期范围内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
+MergeTree 允许使用任意的表达式作为 【可选的】 采样表达式 。 这个表达式必须在主键（元组）中；上面的例子使用了用户ID的哈希作为采样表达式，旨在近乎随机地在 CounterID 和指定日期范围内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
 在实际工作时， MergeTree 将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 
 
