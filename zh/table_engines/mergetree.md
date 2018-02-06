@@ -4,10 +4,10 @@
 
 MergeTree 允许您依据主键和日期创建索引，并进行实时的数据更新操作。MergeTree 是 ClickHouse 里最为先进的表引擎。请注意不要将 MergeTree 跟 Merge 引擎混淆。
 
-MergeTree 引擎在创建时接收以下4个参数，
+`MergeTree` 引擎在创建时接收以下4个参数，
 
 - 日期字段的名称 （索引字段）
-- 采样表达式 【可选的】
+- 采样表达式 （可选的）
 - 含有主键相关字段的元组
 - 稀疏索引的粒度（见下文）。示例：
 
@@ -23,11 +23,11 @@ MergeTree(EventDate, (CounterID, EventDate), 8192)
 MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)
 ```
 
-以 MergeTree 作为引擎的数据表必须含有一个独立的日期型字段。比如说， EventDate 字段。这个日期字段必须是 Date 类型的（非 DateTime 类型）。
+以 MergeTree 作为引擎的数据表必须含有一个独立的 `Date` 字段。比如说， `EventDate` 字段。这个日期字段必须是 `Date` 类型的（非 `DateTime` 类型）。
 
 主键可以是任意表达式构成的元组（通常是列名称的元组），或者是单独一个字段。
 
-抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了用户 ID 的哈希作为特征表达式，旨在近乎随机地在 CounterID 和 EventDate 内打乱数据条目。换而言之，当我们在查询中使用 SAMPLE 子句时，我们就可以得到一个近乎随机分布的用户列表。
+抽样表达式（可选的）可以是任意表达式。这个表达式必须在主键中。上面的例子使用了 `CounterID` 的哈希 `intHash32` 作为特征表达式，旨在近乎随机地在 `CounterID` 和 `EventDate` 内打乱数据条目。换而言之，当我们在查询中使用 `SAMPLE` 子句时，我们就可以得到一个近乎随机分布的用户列表。
 
 数据表将数据分割为小的索引块作为单位进行处理。 每个索引块之间依照主键排序。每个索引块记录了指定的开始日期和结束日期。在您插入数据时，MergeTree 就会对数据进行排序处理，以保证存储在索引块内的数据有序。 索引块之间的合并过程会在系统后台定期自动执行。MergeTree 引擎会选择几个相邻的索引块进行合并（通常是较小的索引块）， 然后对二者合并、排序。
 
@@ -37,15 +37,15 @@ MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)
 
 索引块合并时设有体积上限，以避免索引块合并产生庞大的新索引块。
 
-除了保存索引块中的数据外, 引擎会额外保存一个索引文件，以储存每'index_granularity'行的主键值和对应位置，这就构成了对有序数据的稀疏的索引。
+除了保存索引块中的数据外, 引擎会额外保存一个索引文件，以储存每 `index_granularity` 行的主键值和对应位置，这就构成了对有序数据的稀疏的索引。
 
 对列而言，MergeTree 在每一个索引块里的数据也写入了标记，从而让数据可以在明确的数值范围内被查找到。
 
-当使用 SELECT 读取表内数据时，MergeTree 会判断是否能够使用索引。以下两种情况里，索引将被使用：
-1. 当 WHERE 语句或 PREWHERE 语句用于判断相等或不等判关系时 （作为子句）， 
-2.或当 IN 语句的对象都主键之中（可以含有逻辑关系）时。
+当使用 `SELECT` 读取表内数据时， MergeTree 会判断是否能够使用索引。以下两种情况里，索引将被使用：
+1. 当 `WHERE` 语句或 `PREWHERE` 语句用于判断相等或不等判关系时 （作为子句），
+2. 或当 `IN` 语句的对象都主键或 `Date` 字段之中时（包含逻辑关系）。
 
-  因此， MergeTree 能够快速查询一个或多个主键范围的值。在下面的示例中，MergeTree 能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
+因此， MergeTree 能够快速查询一个或多个主键范围的值。在下面的示例中，MergeTree 能够快速的查询一个明确的 `CounterID` ，指定范围的日期区间里的一个明确的 `CounterID` ，各种 `CounterID` 的集合等。
 
 ```sql
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND CounterID = 34
@@ -70,8 +70,8 @@ SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
 
 对 MergeTree 进行读取的操作会在引擎内部自动的被并行执行。
 
-MergeTree 支持 OPTIMIZE 语句，它会调用额外的合并步骤。
+MergeTree 支持 `OPTIMIZE` 语句，它会调用额外的合并步骤。
 
-MergeTree 可以管理一张很大的数据表，我们也可以小批量、连续地向其添加数据，这正是 MergeTree 设计之初衷。
+它可以管理一张很大的数据表，我们也可以小批量、连续地向其添加数据，这正是 MergeTree 设计之初衷。
 
-MergeTree 引擎支持数据备份功能，具体见 “ data replication ” 以及 ReplicatedMergeTree 一章。
+它支持数据备份功能，具体见 [data replication](replication.md) 一章。
