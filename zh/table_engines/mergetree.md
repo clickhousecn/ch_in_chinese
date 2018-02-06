@@ -47,22 +47,15 @@ MergeTree 允许使用任意的表达式作为 【可选的】 统一化表达�
 
 索引块合并时设有体积上限，以避免索引块合并产生庞大的新索引块。
 
-除了保存索引块中的数据外, 引擎会额外保存一个索引文件。The index file contains the primary key value for every 'index_granularity' row in the table. In other words, this is an abbreviated index of sorted data.
+除了保存索引块中的数据外, 引擎会额外保存一个索引文件，以储存每'index_granularity'行的主键值和对应位置，这就构成了对有序数据的稀疏的索引。
 
+对列而言，MergeTree 在每一个索引块里的数据也写入了标记，从而让数据可以在明确的数值范围内被查找到。
 
-对列来说，在每一个索引块里的数据也写入了标记，从而让数据可以在明确的数值范围内被查找到。
+当使用 SELECT 读取表内数据时，MergeTree 会判断是否能够使用索引。以下两种情况里，索引将被使用：
+1. 当 WHERE 语句或 PREWHERE 语句用于判断相等或不等判关系时 （作为子句）， 
+2.或当 IN 语句的对象都主键之中（可以含有逻辑关系）时。
 
-当读表里的数据时，SELECT查询会被转化为要使用哪些索引。这些索引会被用在判断where条件或者prewhere条件中，来判断是否打中了这些索引区间。
-
-  因此，能够快速查询一个或多个主键范围的值。在下面的示例中，能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
-
-For columns, "marks" are also written to each 'index_granularity' row so that data can be read in a specific range.
-
-When reading from a table, the SELECT query is analyzed for whether indexes can be used.
-An index can be used if the WHERE or PREWHERE clause has an expression (as one of the conjunction elements, or entirely) that represents an equality or inequality comparison operation, or if it has IN above columns that are in the primary key or date, or Boolean operators over them.
-
-Thus, it is possible to quickly run queries on one or many ranges of the primary key. In the example given, queries will work quickly for a specific counter, for a specific counter and range of dates, for a specific counter and date, for multiple counters and a range of dates, and so on.
-
+  因此， MergeTree 能够快速查询一个或多个主键范围的值。在下面的示例中，MergeTree 能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
 
 ```sql
 SELECT count() FROM table WHERE EventDate = toDate(now()) AND CounterID = 34
@@ -72,90 +65,23 @@ SELECT count() FROM table WHERE ((EventDate >= toDate('2014-01-01') AND EventDat
 
 示例贴：
 
-
-下面的例子中，索引不会被用到。
-
-select count() from table where counterId = 34 or url like '%upyachka%'
-
-  日期索引只能读出包含日期查询条件的语句。然而，一个数据part可能包含很多日期的数据，在一个单一的part里，数据是按照主键进行排序的，可能不会将日期作为第一列。因此，如果查询中只是加了日期范围限定没有加主键的限定会导致遍历更多的数据行。
-
-  对于同时读和更新的表，插入操作不会阻塞读的操作。
-
-  读表的行为自动就是并行化的。
-
-  有额外的merge步骤来支持最优化的查询。
-
-  可以用一个很大的单表来不断的往里添加数据。
-
-  数据负值在mergetree这种表引擎中也是支持的，详细看下面的部分 ““data replication””
-
-All of these cases will use the index by date and by primary key. The index is used even for complex expressions. Reading from the table is organized so that using the index can't be slower than a full scan.
-所有的这些示例都是用了日期索引和主键。索引会被用到复杂的表达式计算中，所以读一个组织结构化的表不会比全表扫描慢。
-
-
-In this example, the index can't be used:
+可以看到，下面的例子中， MergeTree 无法使用索引。
 
 ```sql
 SELECT count() FROM table WHERE CounterID = 34 OR URL LIKE '%upyachka%'
 ```
 
-To check whether ClickHouse can use the index when executing the query, use the settings [ force_index_by_date](../operations/settings/settings.md#settings-settings-force_index_by_date)  and [ force_primary_key](../operations/settings/settings.md#settings-settings-force_primary_key).
-
-The index by date only allows reading those parts that contain dates from the desired range. However, a data part may contain data for many dates (up to an entire month), while within a single part the data is ordered by the primary key, which might not contain the date as the first column. Because of this, using a query with only a date condition that does not specify the primary key prefix will cause more data to be read than for a single date.
-
-For concurrent table access, we use multi-versioning. In other words, when a table is simultaneously read and updated, data is read from a set of parts that is current at the time of the query. There are no lengthy locks. Inserts do not get in the way of read operations.
-
-Reading from a table is automatically parallelized.
-
-The `OPTIMIZE` query is supported, which calls an extra merge step.
-
-You can use a single large table and continually add data to it in small chunks – this is what MergeTree is intended for.
-
-Data replication is possible for all types of tables in the MergeTree family (see the section "Data replication").
+若要知晓 MergeTree 能否在查询中使用索引, 请配置设置参数 [ force_index_by_date](../operations/settings/settings.md#settings-settings-force_index_by_date)  、 [ force_primary_key](../operations/settings/settings.md#settings-settings-force_primary_key).
 
 
-# MergeTree
+全局的索引之中仅仅保存了单个数据索引块的日期范围。然而，一个数据索引块可能包含很多日期的数据（甚乎整月），MergeTree 在数据索引块内部依照主键排序，然而用于分组的日期并不一定在数据表的首列。因此，在查询语句中，如果只有日期范围而没有限定主键范围，这将可能导致不必要的数据读取。
 
-举例
+对于并发查询， MergeTree 使用了多版本管理 ： 当我们试图同时读取、写入数据时，查询操作将会在已经插入完毕的索引快中进行，而排除没有写入完毕的索引块，正在被写入的块因而不会受到干扰，这个过程没有使用任何锁机制，同时插入操作不会阻塞读取操作。
 
-不包含示例的mergeTree：
+读表的操作会在内部自动的并行处理。
 
-```text
-    MergeTree(EventDate,  (CounterID,EventDate),  8192)  
-```
-    其中， EventDate 是一个日期字段， CounterID是一个UInt64类型的字段
+MergeTree 支持 OPTIMIZE 语句，它会调用额外的合并步骤。
 
-包含示例的mergeTree：
+MergeTree 可以管理一张很大的数据表，我们也可以小批量、连续地向其添加数据，这正是 MergeTree 设计之初衷。
 
-```text
-MergeTree(  EventDate,  intHash32  (UserId),  CounterID,   EventDate,  intHash32(UserID)),  8192)  
-```
-
-  一个MergeTree类型的表必须有一个包含Date类型的列，在上面的例子里，该列是EventDate，这个日期列的类型必须是'Date'(而非‘DateTime’)
-
-  其中，主键为一个元组，元组中可以包含字段的组合  或  一条表达式。
-
-  这个可选的参数 示例 可以是任何的表达式，但是这个表达式必须出现在主键里。
-
-  上面的示例里使用的是一个哈希类型的userID，来伪随机的对主键里的CounterID和EventDate进行打散。换句话说，当使用了这个示例列的时候，可以伪随机的将用户打散成为均匀的子集。
-
-
-
-合并过程
- 一张 MergeTree 表由很多个 Part (单列的数据索引块) 构成。每一个part按照内部对数据按照主键进行了排序。除此之外，每一个Part含有一个最小日期和最大日期。当插入数据的时候，会将插入的数据创建在一个新的Part 之中。
-
-    同时会在后台周期性的进行merge的过程，当merge的时候，很多个part会被选中，通常是最小的一些part，然后merge成为一个大的排好序的part。
-
-  换句话说，整个这个合并排序的过程是在数据插入表的时候进行的。这个merge会导致这个表总是由少量的排序好的part构成，而且这个merge本身并没有做特别多的工作。
-
-  在插入数据的过程中，属于不同的month的数据会被分割成不同的part，这些归属于不同的month的part是永远不会merge到一起的。这么做的目的是provide local data modification(比较容易做备份)。
-
-  这些part在进行合并的时候会有一个大小的阈值，所以不会有太长的merge过程。
-
-  对于每一个part，会生成一个索引文件。这个索引文件存储了表里面每一个索引块里数据的主键的value值，换句话说，这是个对有序数据的小型索引。
-
-  对列来说，在每一个索引块里的数据也写入了标记，从而让数据可以在明确的数值范围内被查找到。
-
-  当读表里的数据时，SELECT查询会被转化为要使用哪些索引。这些索引会被用在判断where条件或者prewhere条件中，来判断是否打中了这些索引区间。
-
-  因此，能够快速查询一个或多个主键范围的值。在下面的示例中，能够快速的查询一个明确的counter，指定范围的日期区间里的一个明确的counter，各种counter的集合等。
+MergeTree 引擎支持数据备份功能，具体见 “ data replication ” 以及 ReplicatedMergeTree 一章。
