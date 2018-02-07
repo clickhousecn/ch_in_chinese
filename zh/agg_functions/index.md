@@ -1,21 +1,20 @@
 <a name="aggregate_functions"></a>
 
-# Aggregate functions
+# 聚合函数
 
-Aggregate functions work in the [normal](http://www.sql-tutorial.com/sql-aggregate-functions-sql-tutorial) way as expected by database experts.
+聚合函数的行为和其他[主流](http://www.sql-tutorial.com/sql-aggregate-functions-sql-tutorial)的 SQL 基本相同。
 
-ClickHouse also supports:
+除此之外，Clickhouse 还支持：
 
-- [Parametric aggregate functions](parametric_functions.md#aggregate_functions_parametric), which accept other parameters in addition to columns.
-- [Combinators](combinators.md#aggregate_functions_combinators), which change the behavior of aggregate functions.
+- [带形参的聚合函数](parametric_functions.md#aggregate_functions_parametric)，除了接受列为参数之外，还另外需要一些静态的参数去定义该聚合函数的行为。
+- [聚合函数后缀](combinators.md#aggregate_functions_combinators)，用于改变和增强聚合函数的行为。
 
-**Table of Contents**
+**目录**
 
 ```eval_rst
 .. toctree::
-    
+
    reference
    parametric_functions
    combinators
 ```
-

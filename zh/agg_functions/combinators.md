@@ -1,40 +1,94 @@
 <a name="aggregate_functions_combinators"></a>
 
-# Aggregate function combinators
+# 聚合函数后缀
 
-The name of an aggregate function can have a suffix appended to it. This changes the way the aggregate function works.
+我们可以通过添加以下后缀来改变聚合函数的行为。
 
 ## -If
 
-The suffix -If can be appended to the name of any aggregate function. In this case, the aggregate function accepts an extra argument – a condition (Uint8 type). The aggregate function processes only the rows that trigger the condition. If the condition was not triggered even once, it returns a default value (usually zeros or empty strings).
+后缀 -If 可以加在任意聚合函数的后面。在这种情况下，聚合函数额外需要一个类型为 UInt8 的条件参数。聚合函数仅仅处理符合该条件的行。如果没有一行符合要求，聚合函数返回默认值（通常是 0 或者空字符串）。
 
-Examples: `sumIf(column, cond)`, `countIf(cond)`, `avgIf(x, cond)`, `quantilesTimingIf(level1, level2)(x, cond)`, `argMinIf(arg, val, cond)` and so on.
+例子：`sumIf(column, cond)`, `countIf(cond)`, `avgIf(x, cond)`, `quantilesTimingIf(level1, level2)(x, cond)`, `argMinIf(arg, val, cond)`，等等。
 
-With conditional aggregate functions, you can calculate aggregates for several conditions at once, without using subqueries and `JOIN`s. For example, in Yandex.Metrica, conditional aggregate functions are used to implement the segment comparison functionality.
+有了这种带条件的聚合函数，你可以同时计算多个条件的聚合而无需使用子查询或者 `JOIN`。例如，在 Yandex.Metrica 当中，带条件的聚合函数被用于网段比较。
 
 ## -Array
 
-The -Array suffix can be appended to any aggregate function. In this case, the aggregate function takes arguments of the 'Array(T)' type (arrays) instead of 'T' type arguments. If the aggregate function accepts multiple arguments, this must be arrays of equal lengths. When processing arrays, the aggregate function works like the original aggregate function across all array elements.
+后缀 -Array 可以加在任意聚合函数的后面。在这种情况下，聚合函数需要的参数类型由原来的 'T' 变成了数组参数 'Array(T)'。如果该聚合函数接受多个数组参数，这些数组参数的长度必须相同。在处理数组的时候，其行为等价于将所有行的数组合并成为一个数组，然后用原聚合函数处理这个数组里面的所有元素。
 
-Example 1: `sumArray(arr)` - Totals all the elements of all 'arr' arrays. In this example, it could have been written more simply: `sum(arraySum(arr))`.
+示例1： `sumArray(arr)` - 将所有数组的所有元素求和。在这个例子里面，也可以简化为 `sum(arraySum(arr))`。
 
-Example 2: `uniqArray(arr)` – Count the number of unique elements in all 'arr' arrays. This could be done an easier way: `uniq(arrayJoin(arr))`, but it's not always possible to add 'arrayJoin' to a query.
+> 译者注：
+>
+> 考虑表：
+>
+> | DataArray |
+> | --------- |
+> | [1, 2, 3] |
+> | [2, 3, 4, 5] |
+>
+> 下列SQL
+> ```
+> SELECT sumArray(DataArray) FROM
+> (
+>   SELECT arrayJoin([[1, 2, 3], [2, 3, 4, 5]]) As DataArray FROM system.one
+> )
+> ```
+> 的结果为：`20`。
 
--If and -Array can be combined. However, 'Array' must come first, then 'If'. Examples: `uniqArrayIf(arr, cond)`, `quantilesTimingArrayIf(level1, level2)(arr, cond)`. Due to this order, the 'cond' argument can't be an array.
+
+示例2： `uniqArray(arr)` – 求所有数组的所有元素有多少相异的值。这个例子可以简化为 `uniq(arrayJoin(arr))`，但arrayJoin并不是任何时候都可以使用。
+
+> 译者注：
+>
+> 考虑表：
+> 
+> | DataArray |
+> | --------- |
+> | [1, 2, 3] |
+> | [2, 3, 4, 5] |
+> 
+> 下列SQL
+> ```
+> SELECT uniqArray(DataArray) FROM
+> (
+>   SELECT arrayJoin([[1, 2, 3], [2, 3, 4, 5]]) As DataArray FROM system.one
+> )
+> ```
+> 的结果为：`5`。
+
+-If 和 -Array 后缀可以合并使用，'Array' 必须在 'If' 之前。比如：`uniqArrayIf(arr, cond)`，`quantilesTimingArrayIf(level1, level2)(arr, cond)`。条件的类型依然是 UInt8。
+
+> 译者注：
+>
+> 考虑表：
+> 
+> | DataArray |
+> | --------- |
+> | [1, 2, 3] |
+> | [2, 3, 4, 5] |
+> 
+> 下列SQL
+> ```
+> SELECT sumArrayIf(DataArray, length(DataArray) = 3) FROM
+> (
+>   SELECT arrayJoin([[1, 2, 3], [2, 3, 4, 5]]) As DataArray FROM system.one
+> )
+> ```
+> 的结果为：`6`。
 
 ## -State
 
-If you apply this combinator, the aggregate function doesn't return the resulting value (such as the number of unique values for the 'uniq' function), but an intermediate state of the aggregation (for ` uniq`, this is the hash table for calculating the number of unique values). This is an AggregateFunction(...) that can be used for further processing or stored in a table to finish aggregating later. See the sections "AggregatingMergeTree" and "Functions for working with intermediate aggregation states".
+使用该后缀将返回一个中间聚合状态（比如说，对于 `uniq`，这个中间状态是一个包含一些不同元素的哈希表），而不是最终的结果（比如说，对于 `uniq`，那就是多少个不同的元素。这样我们可以之后再处理（使用-Merge），或者存储在一个表里以供以后再聚合。详情见 "AggregatingMergeTree" 和 "Functions for working with intermediate aggregation states"。
 
 ## -Merge
 
-If you apply this combinator, the aggregate function takes the intermediate aggregation state as an argument, combines the states to finish aggregation, and returns the resulting value.
+使用该后缀可以接受一个中间聚合状态参数，然后返回最终的结果。
 
-## -MergeState.
+## -MergeState
 
-Merges the intermediate aggregation states in the same way as the -Merge combinator. However, it doesn't return the resulting value, but an intermediate aggregation state, similar to the -State combinator.
+使用该后缀与-Merge类似，都可以合并多个中间聚合状态。与之不同的是，它返回的是也是一个中间聚合状态。
 
 ## -ForEach
 
-Converts an aggregate function for tables into an aggregate function for arrays that aggregates the corresponding array items and returns an array of results. For example, `sumForEach` for the arrays `[1, 2]`, `[3, 4, 5]`and`[6, 7]`returns the result `[10, 13, 5]` after adding together the corresponding array items.
-
+-ForEach垂直地用原来的聚合函数处理所有数组同一列的数据，然后将聚合的结果重新组装成一个数组返回。例如，`sumForEach` 用于数组 `[1, 2]`, `[3, 4, 5]` 和 `[6, 7]` 会得到结果 `[10, 13, 5]`。
