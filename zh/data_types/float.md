@@ -25,7 +25,6 @@
 
 - 计算的结果取决于计算方式（处理器类型和计算机系统架构）
 
-- Floating-point calculations might result in numbers such as infinity (`Inf`) and "not-a-number" (`NaN`). This should be taken into account when processing the results of calculations.
 - 浮点数计算可能出现这样的结果，比如 "infinity" （`Inf`） 和 "not-a-number" （`NaN`）。对浮点数计算的时候应该考虑到这点。
 
 - 当一行行阅读浮点数的时候，浮点数的结果可能不是机器最近显示的数值。
@@ -68,5 +67,5 @@
   └──────────────┘
    ```
 
-   See the rules for ` NaN` sorting in the section [ORDER BY 子句](../query_language/queries.md#query_language-queries-order_by).
+可以在[ORDER BY 子句](../query_language/queries.md#query_language-queries-order_by) 查看更多关于 ` NaN` 排序的规则。
 
