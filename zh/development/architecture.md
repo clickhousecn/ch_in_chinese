@@ -6,11 +6,11 @@ ClickHouse 是一个列式数据库。这不仅仅体现在其数据是按列存
 >
 > 为了加快执行查询的速度，我们有两种不同的方法：向量化查询执行和运行时生成代码。对于后者，所有查询的二进制代码都是即时生成，这样就可以避免间接引用和动态调度。不过，这两种方法各有千秋，并没有哪个在任何情况下都比对方好。运行时生成代码的好处时它可以把很多操作捆绑在一起，从而更好地利用 CPU 的算力和流水线。向量化查询执行在某些情况下并不实用，因为使用它时需要往 CPU 缓存读取和写入临时的向量数据，而如果这些临时的数据太大以至于无法完整放入 L2 缓存，这种算法就会出现问题。当然，向量化查询执行可以很好地利用 CPU 的 SIMD 功能。我们的几位朋友在[一篇研究](http://15721.courses.cs.cmu.edu/spring2016/papers/p5-sompolski.pdf)中指出如果这两种方法混用的话，可能得到更好的效果。ClickHouse 主要使用向量化查询执行，同时少量地尝试使用运行时生成代码（仅用在 GROUP BY 第一阶段的内部循环）。
 
-## Columns
+## 列
 
-To represent columns in memory (actually, chunks of columns), the `IColumn` interface is used. This interface provides helper methods for implementation of various relational operators. Almost all operations are immutable: they do not modify the original column, but create a new modified one. For example, the `IColumn::filter` method accepts a filter byte mask and creates a new filtered column. It is used for the `WHERE` and `HAVING` relational operators. Additional examples: the `IColumn::permute` method to support `ORDER BY`, the `IColumn::cut` method to support `LIMIT`, and so on.
+`IColumn` 接口用于在内存中表示一列，以及列里的数据。这个接口提供了一些辅助函数，用于编写关系运算符。几乎所有的操作都是 immutable 的：不能修改原来的列对象，而只会生成新的列对象。举个例子，`IColumn::filter` 方法的参数是一个过滤器字符掩码，生成一个新的只包含过滤后数据的列。这个方法用于 `WHERE` 和 `HAVING` 这种关系运算符。另外的例子包括用于 `ORDER BY` 的 `IColumn::permute`，用于 `LIMIT` 的 `IColumn::cut`，等等。
 
-Various `IColumn` implementations (`ColumnUInt8`, `ColumnString` and so on) are responsible for the memory layout of columns. Memory layout is usually a contiguous array. For the integer type of columns it is just one contiguous array, like `std::vector`. For `String` and `Array` columns, it is two vectors: one for all array elements, placed contiguously, and a second one for offsets to the beginning of each array. There is also `ColumnConst` that stores just one value in memory, but looks like a column.
+几种基于 `IColumn` 接口的实现（包括 `ColumnUInt8`，`ColumnString` 等等）分别定义了列的值如何储存在内存中，通常是一个连续的数组。对于整形的列，仅仅需要一个连续的数组，例如 `std::vector`。对于字符串或者数组列，需要两个 vectors：一个储存所有元素的数据，另外一个储存每个元素在数据数组中的偏移位置。还有一个特殊的列实现 `ColumnConst`，用于在内存里储存一个常量作为一个列。
 
 ## Field
 
