@@ -1,10 +1,10 @@
 # Clickhouse 架构概述
 
-ClickHouse is a true column-oriented DBMS. Data is stored by columns, and during query execution data is processed by arrays (vectors or chunks of columns). Whenever possible, operations are dispatched on arrays, rather than on individual values. This is called "vectorized query execution," and it helps lower dispatch cost relative to the cost of actual data processing.
+ClickHouse 是一个列式数据库。这不仅仅体现在其数据是按列存储的，还体现在查询时数据也是以数组（向量，或者同一列中的一些值）的方式执行。只要有可能，操作都是以数组为单位而不是单一的值执行。这被称作“向量化查询执行”，用于降低处理数据时所需要的调度开销。
 
-> This idea is nothing new. It dates back to the `APL` programming language and its descendants: `A+`, `J`, `K`, and `Q`. Array programming is widely used in scientific data processing. Neither is this idea something new in relational databases: for example, it is used in the `Vectorwise` system.
+> 这个想法并不新鲜。其最早可追溯到编程语言 `APL`，以及其衍生语言 `A+`， `J`， `K`和 `Q`。面向数组编程在学界数据处理中应用非常广泛。同样地，在关系数据库中也有运用了这个想法的例子，比如 `Vectorwise`。
 >
-> There are two different approaches for speeding up query processing: vectorized query execution and runtime code generation. In the latter, the code is generated for every kind of query on the fly, removing all indirection and dynamic dispatch. Neither of these approaches is strictly better than the other. Runtime code generation can be better when it fuses many operations together, thus fully utilizing CPU execution units and the pipeline. Vectorized query execution can be less practical, because it involves temporary vectors that must be written to cache and read back. If the temporary data does not fit in the L2 cache, this becomes an issue. But vectorized query execution more easily utilizes the SIMD capabilities of the CPU. A [research paper](http://15721.courses.cs.cmu.edu/spring2016/papers/p5-sompolski.pdf) written by our friends shows that it is better to combine both approaches. ClickHouse mainly uses vectorized query execution and has limited initial support for runtime code generation (only the inner loop of the first stage of GROUP BY can be compiled).
+> 为了加快执行查询的速度，我们有两种不同的方法：向量化查询执行和运行时生成代码。对于后者，所有查询的二进制代码都是即时生成，这样就可以避免间接引用和动态调度。不过，这两种方法各有千秋，并没有哪个在任何情况下都比对方好。运行时生成代码的好处时它可以把很多操作捆绑在一起，从而更好地利用 CPU 的算力和流水线。向量化查询执行在某些情况下并不实用，因为使用它时需要往 CPU 缓存读取和写入临时的向量数据，而如果这些临时的数据太大以至于无法完整放入 L2 缓存，这种算法就会出现问题。当然，向量化查询执行可以很好地利用 CPU 的 SIMD 功能。我们的几位朋友在[一篇研究](http://15721.courses.cs.cmu.edu/spring2016/papers/p5-sompolski.pdf)中指出如果这两种方法混用的话，可能得到更好的效果。ClickHouse 主要使用向量化查询执行，同时少量地尝试使用运行时生成代码（仅用在 GROUP BY 第一阶段的内部循环）。
 
 ## Columns
 
