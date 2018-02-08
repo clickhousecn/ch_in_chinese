@@ -1,6 +1,6 @@
-# Special data types
+# 特殊数据类型
 
-Special data type values can't be saved to a table or output in results, but are used as the intermediate result of running a query.
+特殊数据类型的值既不能存在表中也不能在结果中输出，但是可以被用于表示查询过程中的中间结果。
 
 ```eval_rst
 .. toctree::

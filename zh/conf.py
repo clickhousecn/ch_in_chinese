@@ -20,14 +20,14 @@ import sys
 from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 
-source_parsers = {
-    '.md': CommonMarkParser,
-}
+from docutils import nodes, transforms
 
 def autostructify_parse_ref(self, ref):
     title = None
     if len(ref.children) == 0:
         title = ref['name']
+    elif isinstance(ref.children[0], nodes.Text):
+        title = ref.children[0].astext()
     uri = ref['refuri']
     if uri.find('://') != -1:
         return (title, uri, None)
@@ -37,7 +37,9 @@ def autostructify_parse_ref(self, ref):
 
 AutoStructify.parse_ref = autostructify_parse_ref
 
-
+source_parsers = {
+    '.md': CommonMarkParser,
+}
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.

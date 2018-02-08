@@ -1,6 +1,6 @@
 <a name="data_types"></a>
 
-# Data types
+# 数据类型
 
 ```eval_rst
 .. toctree::
