@@ -26,16 +26,16 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 很多以列为对象的函数都可以有两种写法，一种是通用而低效的方式通过 `IColumn` 获取 `Field` 的值，另一种是假设知道数据在内存中如何存储而用专门的方式获得其值。在第二种方法中，函数在访问数据时将 `IColumn` 类型转换成具体的某种实现，从而直接与其内部结构打交道。举个例子， `ColumnUInt64` 有一个返回内部数组引用的方法 `getData`，还有另一个方法直接读写那个数组。实际上，我们会故意泄露（本来被抽象成 `IColumn` 的）列对象的内部的数据结构来达到依据不同的类型来高效执行函数的目的。
 
-## Data types
+## 数据类型
 
-`IDataType` is responsible for serialization and deserialization: for reading and writing chunks of columns or individual values in binary or text form.
-`IDataType` directly corresponds to data types in tables. For example, there are `DataTypeUInt32`, `DataTypeDateTime`, `DataTypeString` and so on.
+`IDataType` 用于序列化和反序列化，也就是对以二进制或者文本表示的一串列的值或者单一值进行读写。
+`IDataType` 的具体实现与表格中的数据类型一一对应。比如，实现的类型包括 `DataTypeUInt32`，`DataTypeDateTime` 和 `DataTypeString` 等。
 
-`IDataType` and `IColumn` are only loosely related to each other. Different data types can be represented in memory by the same `IColumn` implementations. For example, `DataTypeUInt32` and `DataTypeDateTime` are both represented by `ColumnUInt32` or `ColumnConstUInt32`. In addition, the same data type can be represented by different `IColumn` implementations. For example, `DataTypeUInt8` can be represented by `ColumnUInt8` or `ColumnConstUInt8`.
+`IDataType` 和 `IColumn` 没有很强烈的相关。不同的数据类型在内存中可以用同一种 `IColumn` 实现。例如， `DataTypeUInt32` 和 `DataTypeDateTime` 都可以用 `ColumnUInt32` 或者 `ColumnConstUInt32` 表示。另外，同一种数据类型也可以用多于一种的 `IColumn` 实现。例如，`DataTypeUInt8` 可以用 `ColumnUInt8` 或者 `ColumnConstUInt8` 表示。
 
-`IDataType` only stores metadata. For instance, `DataTypeUInt8` doesn't store anything at all (except vptr) and `DataTypeFixedString` stores just `N` (the size of fixed-size strings).
+`IDataType` 仅存储元数据。 比如，`DataTypeUInt8` 实际上除了虚表指针之外并不存储任何东西；`DataTypeFixedString` 也仅仅储存了 `N`（定长字符串的长度）。
 
-`IDataType` has helper methods for various data formats. Examples are methods to serialize a value with possible quoting, to serialize a value for JSON, and to serialize a value as part of XML format. There is no direct correspondence to data formats. For example, the different data formats `Pretty` and `TabSeparated` can use the same `serializeTextEscaped` helper method from the `IDataType` interface.
+`IDataType` 对于不同的数据格式都有辅助方法。比如说序列化可能包含引号的值，序列化成 JSON，序列化成 XML 格式的一部分等。但这些辅助方法与数据格式没有一一对应的关系。例如，数据格式 `Pretty` 和 `TabSeparated` 都可以使用 `IDataType` 接口的 `serializeTextEscaped` 辅助方法。
 
 ## Block
 
