@@ -18,11 +18,13 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 `Field` 本身并没有带有详细的表中数据类型信息。举个例子，`UInt8`，`UInt16`，`UInt32` 和 `UInt64` 在一个 `Field` 中都以 `UInt64` 来表示。
 
-## Leaky abstractions
+## 不严格的封装
 
-`IColumn` has methods for common relational transformations of data, but they don't meet all needs. For example, `ColumnUInt64` doesn't have a method to calculate the sum of two columns, and `ColumnString` doesn't have a method to run a substring search. These countless routines are implemented outside of `IColumn`.
+> 译者注：英文文档原文是 `Leaky Abstraction`，直译为“泄露的抽象”，下文主要在描述尽管有 `IColumn` 这一层抽象，为了执行效率，真正的执行还是会把该对象重新类型转换成真正的具体类型以对其结构里的数据直接的操作，所以意译为 `不严格的封装`
 
-Various functions on columns can be implemented in a generic, non-efficient way using `IColumn` methods to extract `Field` values, or in a specialized way using knowledge of inner memory layout of data in a specific `IColumn` implementation. To do this, functions are cast to a specific `IColumn` type and deal with internal representation directly. For example, `ColumnUInt64` has the `getData` method that returns a reference to an internal array, then a separate routine reads or fills that array directly. In fact, we have "leaky abstractions" to allow efficient specializations of various routines.
+`IColumn` 定义了一些常见的关系类数据转化的方法，但对于特定的类型所需要的方法，仍然捉襟见肘。举个栗子， `ColumnUInt64` 没有将两列求和的方法，而 `ColumnString` 没有寻找子字符串的方法。不少这样的函数都在 `IColumn` 之外实现。
+
+很多以列为对象的函数都可以有两种写法，一种是通用而低效的方式通过 `IColumn` 获取 `Field` 的值，另一种是假设知道数据在内存中如何存储而用专门的方式获得其值。在第二种方法中，函数在访问数据时将 `IColumn` 类型转换成具体的某种实现，从而直接与其内部结构打交道。举个例子， `ColumnUInt64` 有一个返回内部数组引用的方法 `getData`，还有另一个方法直接读写那个数组。实际上，我们会故意泄露（本来被抽象成 `IColumn` 的）列对象的内部的数据结构来达到依据不同的类型来高效执行函数的目的。
 
 ## Data types
 
