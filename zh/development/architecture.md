@@ -12,11 +12,11 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 几种基于 `IColumn` 接口的实现（包括 `ColumnUInt8`，`ColumnString` 等等）分别定义了列的值如何储存在内存中，通常是一个连续的数组。对于整形的列，仅仅需要一个连续的数组，例如 `std::vector`。对于字符串或者数组的列，需要两个 vectors：一个储存所有元素的数据，另外一个储存每个元素在数据数组中的偏移位置。还有一个特殊的列实现 `ColumnConst`，用于在内存里储存一个常量作为一个列。
 
-## Field
+## 字段
 
-Nevertheless, it is possible to work with individual values as well. To represent an individual value, `Field` is used. `Field` is just a discriminated union of `UInt64`, `Int64`, `Float64`, `String` and `Array`. `IColumn` has the `operator[]` method to get the n-th value as a `Field`, and the `insert` method to append a `Field` to the end of a column. These methods are not very efficient, because they require dealing with temporary `Field` objects representing an individual value. There are more efficient methods, such as `insertFrom`, `insertRangeFrom`, and so on.
+然而，我们也可以使用单个的值。我们有一个专用的类 `Field`；它实际上是 `UInt64`， `Int64`， `Float64`， `String` 和 `Array` 的一个可区分的联合（Discriminated Union）。`IColumn` 有一个返回类型为 `Field` 的 `operator[]` 方法，用于拿到第 n 个值；有一个 `insert` 方法将一个 `Field` 添加到列的末端。这些方法都不是很有效率，因为它们都需要用临时的 `Field` 对象来存储单个的值。更高效的方法包括 `insertFrom` 和 `insertRangeFrom`，等等。
 
-`Field` doesn't have enough information about a specific data type for a table. For example, `UInt8`, `UInt16`, `UInt32`, and `UInt64` are all represented as `UInt64` in a `Field`.
+`Field` 本身并没有带有详细的表中数据类型信息。举个例子，`UInt8`，`UInt16`，`UInt32` 和 `UInt64` 在一个 `Field` 中都以 `UInt64` 来表示。
 
 ## Leaky abstractions
 
