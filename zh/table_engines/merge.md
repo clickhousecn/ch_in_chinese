@@ -1,38 +1,37 @@
 # Merge
 
-The Merge engine (not to be confused with `MergeTree`) does not store data itself, but allows reading from any number of other tables simultaneously.
-Reading is automatically parallelized. Writing to a table is not supported. When reading, the indexes of tables that are actually being read are used, if they exist.
-The Merge engine accepts parameters: the database name and a regular expression for tables. Example:
+Merge 引擎表（不要和 `MergeTree` 相混淆）本身并不存储数据，但是它可以同时地从任意其他表中读取数据。
+Merge 引擎表的数据读取是并行的，但它不支持数据写入。当数据读取的时候，读取不同的表会使用它本身有的索引。
+Merge 引擎支持一些参数：数据库名字和一个匹配表名称的正则表达式。示例：
 
 ```text
 Merge(hits, '^WatchLog')
 ```
 
-- Data will be read from the tables in the 'hits' database that have names that match the regular expression '`^WatchLog`'.
+- 数据会从 `hits` 数据库中满足 `^WatchLog` 正则匹配的表中读取。
 
-Instead of the database name, you can use a constant expression that returns a string. For example, `currentDatabase()`.
+除了指定数据库名称，还可以使用常量表达式表示一个字符串来指定，比如说 `currentDatabase()`。
 
-Regular expressions are re2 (similar to PCRE), case-sensitive.
-See the notes about escaping symbols in regular expressions in the "match" section.
+正则表达式是使用 re2 (与 PCRE 类似), 大小写敏感。
+在 "(match)[../functions/string_search_functions#match-haystack-pattern]" 部分可以了解到正则表达式中转义符号的解释。
 
-When selecting tables to read, the Merge table itself will not be selected, even if it matches the regex. This is to avoid loops.
-It is possible to create two Merge tables that will endlessly try to read each others' data. But don't do this.
+当选择匹配的表进行读取时，Merge 表本身是不会被选择的，即使它是满足正则匹配的，这样可以了防止表的循环读取。
+可以创建两个 Merge 表且让其中一个表设置成读取另外一个表。但最好不要这样做。
 
-The typical way to use the Merge engine is for working with a large number of TinyLog tables as if with a single table.
+使用 Merge 引擎最常见的场景是将大量的 TinyLog 表当做一个单表来读取。
 
-## Virtual columns
+## 虚拟列
 
-Virtual columns are columns that are provided by the table engine, regardless of the table definition. In other words, these columns are not specified in CREATE TABLE, but they are accessible for SELECT.
+虚拟列是指表引擎提供的列，而不管表是如何定义的。换句话说，这些列并没有在 CREATE TABLE 语句中指定，但是却可以被 SELECT。
 
-Virtual columns differ from normal columns in the following ways:
+虚拟列和普通列有以下不同：
 
-- They are not specified in table definitions.
-- Data can't be added to them with INSERT.
-- When using INSERT without specifying the list of columns, virtual columns are ignored.
-- They are not selected when using the asterisk (`SELECT *`).
-- Virtual columns are not shown in `SHOW CREATE TABLE` and `DESC TABLE` queries.
+- 它们不在表定义中指定。
+- 不可以通过 INSERT 虚拟列来插入数据。
+- 当没有指定列的字段来 INSERT 数据时，虚拟列是被忽略的。
+- 使用星号来做选择查询时（`SELECT *`），虚拟列不会被选择。
+- 虚拟列不会在 `SHOW CREATE TABLE` 和 `DESC TABLE` 查询中显示出来。
 
-A Merge type table contains a virtual _table column with the String type. (If the table already has a _table column, the virtual column is named _table1, and if it already has _table1, it is named _table2, and so on.) It contains the name of the table that data was read from.
+Merge 引擎表实际上是含有一个字符串格式的虚拟列 `_table`（若表中已经含有 `_table` 字段，虚拟列则命名为 `_table1`，若表中也有 `_table1`，则命名为 `_table2`，以此类推）。它包含了需要读取的表名称。 
 
-If the WHERE or PREWHERE clause contains conditions for the '_table' column that do not depend on other table columns (as one of the conjunction elements, or as an entire expression), these conditions are used as an index. The conditions are performed on a data set of table names to read data from, and the read operation will be performed from only those tables that the condition was triggered on.
-
+如果 WHERE 或者 PREWHERE 子句中含有了 `_table` 字段的条件，且这些条件不依赖与其他表字段，则这些条件会被当做一个索引来使用。这些条件表明从一批数据集中读取数据时，读取的操作只会在条件触发的表中执行。
