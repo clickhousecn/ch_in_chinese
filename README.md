@@ -1,6 +1,6 @@
 # ClickHouse 中文翻译文档
 
-![Build Status](https://www.travis-ci.org/clickhousecn/ch_in_chinese.svg?branch=master)
+[![Build Status](https://travis-ci.org/clickhousecn/ch_in_chinese.svg?branch=master)](https://travis-ci.org/clickhousecn/ch_in_chinese)
 
 
 ## 翻译计划
