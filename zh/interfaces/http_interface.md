@@ -60,7 +60,7 @@ ECT 1
 , expected One of: SHOW TABLES, SHOW DATABASES, SELECT, INSERT, CREATE, ATTACH, RENAME, DROP, DETACH, USE, SET, OPTIMIZE., e.what() = DB::Exception
 ```
 
-默认情况下，返回的数据是 TabSeparated 格式的，更多信息，见 "[数据格式](../../formats/index.html)" 部分。
+默认情况下，返回的数据是 TabSeparated 格式的，更多信息，见 "[数据格式](../formats/index.md)" 部分。
 可以使用 FORMAT 设置查询来请求不同格式。
 
 ```bash
@@ -192,11 +192,11 @@ $ echo 'SELECT number FROM system.numbers LIMIT 10' | curl 'http://localhost:812
 
 相比起 TCP 原生接口，HTTP 接口不支持会话和会话设置的概念，不允许中止查询（准确地说，只在少数情况下允许），不显示查询处理的进展。执行解析和数据格式化都是在服务端处理，网络上会比 TCP 原生接口更低效。
 
-可选的 `query_id` 参数可能当做 query ID 传入（或者任何字符串）。更多信息，参见 "[设置 replace_running_query](../../operations/settings/settings.html#replace-running-query)" 部分。
+可选的 `query_id` 参数可能当做 query ID 传入（或者任何字符串）。更多信息，参见 "[设置 - replace_running_query](../operations/settings/settings.md#replace-running-query)" 部分。
 
-可选的 `quota_key` 参数可能当做 quota key 传入（或者任何字符串）。更多信息，参见 "[配额](../../operations/quotas.html)" 部分。
+可选的 `quota_key` 参数可能当做 quota key 传入（或者任何字符串）。更多信息，参见 "[配额](../operations/quotas.md)" 部分。
 
-HTTP 接口允许传入额外的数据（外部临时表）来查询。更多信息，参见 "[外部数据查询处理](../../table_engines/external_data.html)" 部分。
+HTTP 接口允许传入额外的数据（外部临时表）来查询。更多信息，参见 "[外部数据查询处理](../table_engines/external_data.md)" 部分。
 
 ## 响应缓冲
 
