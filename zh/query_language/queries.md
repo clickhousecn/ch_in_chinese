@@ -957,47 +957,6 @@ The corresponding conversion can be performed before the WHERE/PREWHERE clause (
 
 
 
-
-
-
-
-
-
-### WHERE 语句
-
-如果有一个 WHERE 语句, 它必须包含一个带有UInt8类型的表达式. 通常情况下是带有比较和逻辑操作符的表达式.
-此表达式将被用于在所有其他转换之前过滤数据.
-
-如果数据库表引擎支持索引, 表达式使用索引来评估.
-
-### PREWHERE 语句
-
-此语句与WHERE语句效果相同. 主要区别是数据从表中读取.
-当使用 PREWHERE 时, 首先, 只有执行PREWHERE语句的列被读取. 然后, 其他列在运行query查询时被读取, 只读取当PREWHERE表达式为 ture时这些数据块.
-
-如果有过滤条件, 不适合索引, 使用PREWHERE是有意义的, 在查询中被用于少数列, 但是提供了一个很强有力的数据过滤. 这减少了数据量的读取.
-
-例如, 使用PREWHERE进行抽取大量的列是有非常有用的, 但是仅为一些列进行过滤.
-
-PREWHERE 仅被`*MergeTree`表引擎家族支持.
-
-一个查询可能同时指定 PREWHERE 和 WHERE. 在这种情况下, PREWHERE 优先于 WHERE.
-
-切记, 对于PREWHERE来说, 仅指定有索引的列并没有太大意义, 因为当你使用一个索引, 仅有匹配索引的数据块被读取.
-
-如果 'optimize_move_to_prewhere' 设置被设为1, 同时 PREWHERE 被忽略, 此系统使用启发式自动从WHERE到PREWHERE 移动表达式的部分.
-
-### GROUP BY 语句
-
-这是列式DBMS最重要的部分.
-
-如果有一个 GROUP BY 语句, 它必包含一个表达式列表. 每个表达式将被引用作为一个"key".
-在SELECT, HAVING, 和 ORDER BY 语句中的所有的表达式必须从 keys 中或aggregate函数中被计算. 换句话说, 从表中查询出来的列必须被用在 keys 或在 aggregate 函数中.
-
-如果一个查询仅包含表的列在aggregate函数中, GROUP BY 语句能够忽略, 同时假设通过一个keys的空集合进行聚合.
-
-示例:
-
 ```sql
 SELECT
     count(),

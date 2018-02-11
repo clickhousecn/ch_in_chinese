@@ -1,5 +1,5 @@
-# Array(T)
+# Array（T）
 
-An array of elements of type T. The T type can be any type, including an array.
-We don't recommend using multidimensional arrays, because they are not well supported (for example, you can't store multidimensional arrays in tables with a MergeTree engine).
+一个包含类型 T 的 Array。T 类型可以是任意类型，包括 Array 类型。
+我们不推荐使用多维 Array，因为多维 Array 并没有得到很好支持（比如，不能在 MergeTree 引擎的表中存储多维 Array）。
 

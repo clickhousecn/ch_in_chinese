@@ -1,6 +1,6 @@
-# Libraries from third-party developers
+# 第三方开发的库
 
-There are libraries for working with ClickHouse for:
+以下都是适用于 ClickHouse 的第三方库：
 
 - Python:
    - [infi.clickhouse_orm](https://github.com/Infinidat/infi.clickhouse_orm)

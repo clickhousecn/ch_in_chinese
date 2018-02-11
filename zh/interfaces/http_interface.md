@@ -1,21 +1,21 @@
-# HTTP interface
+# HTTP 接口
 
-The HTTP interface lets you use ClickHouse on any platform from any programming language. We use it for working from Java and Perl, as well as shell scripts. In other departments, the HTTP interface is used from Perl, Python, and Go. The HTTP interface is more limited than the native interface, but it has better compatibility.
+HTTP 接口可以让你通过任何平台和编程语言来使用 ClickHouse。我们用 Java 和 Perl 以及 shell 脚本来访问它。在其他的部门中，HTTP 接口会用在 Perl，Python 以及 Go 中。HTTP 接口比 TCP 原生接口更为局限，但是却有更好的兼容性。
 
-By default, clickhouse-server listens for HTTP on port 8123 (this can be changed in the config).
-If you make a GET / request without parameters, it returns the string "Ok" (with a line feed at the end). You can use this in health-check scripts.
+默认情况下，clickhouse-server 会在端口 8123 上监控 HTTP 请求（这可以在配置中修改）。
+如果你发送了一个不带参数的 GET 请求，它会返回一个字符串 "Ok"（结尾有换行）。可以将它用在健康检查脚本中。
 
 ```bash
 $ curl 'http://localhost:8123/'
 Ok.
 ```
 
-Send the request as a URL 'query' parameter, or as a POST. Or send the beginning of the query in the 'query' parameter, and the rest in the POST (we'll explain later why this is necessary). The size of the URL is limited to 16 KB, so keep this in mind when sending large queries.
+通过  URL 中的 `query` 参数来发送请求，或者发送 POST 请求，或者将查询的开头部分放在 URL 的 `query` 参数中，其他部分放在 POST 中（我们会在后面解释为什么这样做是有必要的）。URL 的大小会限制在 16 KB，所以发送大型查询时要时刻记住这点。
 
-If successful, you receive the 200 response code and the result in the response body.
-If an error occurs, you receive the 500 response code and an error description text in the response body.
+如果请求成功，将会收到 200 的响应状态码和响应主体中的结果。
+如果发生了某个异常，将会收到 500 的响应状态码和响应主体中的异常描述信息。
 
-When using the GET method, 'readonly' is set. In other words, for queries that modify data, you can only use the POST method. You can send the query itself either in the POST body, or in the URL parameter.
+当使用 GET 方法请求时，`readonly` 会被设置。换句话说，若要作修改数据的查询，只能发送 POST 方法的请求。可以将查询通过 POST 主体发送，也可以通过 URL 参数发送。
 
 Examples:
 
@@ -37,7 +37,7 @@ Date: Fri, 16 Nov 2012 19:21:50 GMT
 1
 ```
 
-As you can see, curl is somewhat inconvenient in that spaces must be URL escaped.Although wget escapes everything itself, we don't recommend using it because it doesn't work well over HTTP 1.1 when using keep-alive and Transfer-Encoding: chunked.
+可以看到，curl 命令由于空格需要 URL 转义，所以不是很方便。尽管 wget 命令对url做了 URL 转义，但我们并不推荐使用他，因为在 HTTP 1.1 协议下使用 keep-alive 和 Transfer-Encoding: chunked 头部设置它并不能很好的工作。
 
 ```bash
 $ echo 'SELECT 1' | curl 'http://localhost:8123/' --data-binary @-
@@ -50,8 +50,8 @@ $ echo '1' | curl 'http://localhost:8123/?query=SELECT' --data-binary @-
 1
 ```
 
-If part of the query is sent in the parameter, and part in the POST, a line feed is inserted between these two data parts.
-Example (this won't work):
+如果一部分请求是通过参数发送的，另外一部分通过 POST 主体发送，两部分查询之间会一行空行插入。
+错误示例：
 
 ```bash
 $ echo 'ECT 1' | curl 'http://localhost:8123/?query=SEL' --data-binary @-
@@ -60,8 +60,8 @@ ECT 1
 , expected One of: SHOW TABLES, SHOW DATABASES, SELECT, INSERT, CREATE, ATTACH, RENAME, DROP, DETACH, USE, SET, OPTIMIZE., e.what() = DB::Exception
 ```
 
-By default, data is returned in TabSeparated format (for more information, see the "Formats" section).
-You use the FORMAT clause of the query to request any other format.
+默认情况下，返回的数据是 TabSeparated 格式的，更多信息，见 "[数据格式](../../formats/index.html)" 部分。
+可以使用 FORMAT 设置查询来请求不同格式。
 
 ```bash
 $ echo 'SELECT 1 FORMAT Pretty' | curl 'http://localhost:8123/?' --data-binary @-
@@ -72,39 +72,39 @@ $ echo 'SELECT 1 FORMAT Pretty' | curl 'http://localhost:8123/?' --data-binary @
 └───┘
 ```
 
-The POST method of transmitting data is necessary for INSERT queries. In this case, you can write the beginning of the query in the URL parameter, and use POST to pass the data to insert. The data to insert could be, for example, a tab-separated dump from MySQL. In this way, the INSERT query replaces LOAD DATA LOCAL INFILE from MySQL.
+INSERT 必须通过 POST 方法来插入数据。这种情况下，你可以将查询的开头部分放在 URL 参数中，然后用 POST 主体传入插入的数据。插入的数据可以是，举个例子，从 MySQL 导出的以 tab 分割的数据。在这种方式中，INSERT 查询取代了 LOAD DATA LOCAL INFILE from MySQL。
 
-Examples: Creating a table:
+示例: 创建一个表:
 
 ```bash
 echo 'CREATE TABLE t (a UInt8) ENGINE = Memory' | POST 'http://localhost:8123/'
 ```
 
-Using the familiar INSERT query for data insertion:
+使用类似 INSERT 的查询来插入数据：
 
 ```bash
 echo 'INSERT INTO t VALUES (1),(2),(3)' | POST 'http://localhost:8123/'
 ```
 
-Data can be sent separately from the query:
+数据可以从查询中单独发送：
 
 ```bash
 echo '(4),(5),(6)' | POST 'http://localhost:8123/?query=INSERT INTO t VALUES'
 ```
 
-You can specify any data format. The 'Values' format is the same as what is used when writing INSERT INTO t VALUES:
+可以指定任何数据格式。值的格式和写入表 `t` 的值的格式相同：
 
 ```bash
 echo '(7),(8),(9)' | POST 'http://localhost:8123/?query=INSERT INTO t FORMAT Values'
 ```
 
-To insert data from a tab-separated dump, specify the corresponding format:
+若要插入 tab 分割的数据，需要指定对应的格式：
 
 ```bash
 echo -ne '10\n11\n12\n' | POST 'http://localhost:8123/?query=INSERT INTO t FORMAT TabSeparated'
 ```
 
-Reading the table contents. Data is output in random order due to parallel query processing:
+从表中读取内容。由于查询处理是并行的，数据以随机顺序输出。
 
 ```bash
 $ GET 'http://localhost:8123/?query=SELECT a FROM t'
@@ -122,22 +122,22 @@ $ GET 'http://localhost:8123/?query=SELECT a FROM t'
 6
 ```
 
-Deleting the table.
+删除表。
 
 ```bash
 POST 'http://localhost:8123/?query=DROP TABLE t'
 ```
 
-For successful requests that don't return a data table, an empty response body is returned.
+成功请求后并不会返回数据，返回一个空的响应体。
 
-You can use compression when transmitting data. The compressed data has a non-standard format, and you will need to use the special compressor program to work with it (sudo apt-get install compressor-metrika-yandex).
+可以通过压缩来传输数据。压缩的数据没有一个标准的格式，但你需要指定一个压缩程序来使用它(sudo apt-get install compressor-metrika-yandex）。
 
-If you specified 'compress=1' in the URL, the server will compress the data it sends you.
-If you specified 'decompress=1' in the URL, the server will decompress the same data that you pass in the POST method.
+如果在 URL 中指定了 `compress=1` ，服务会返回压缩的数据。
+如果在 URL 中指定了 `decompress=1` ，服务会解压通过 POST 方法发送的数据。
 
-You can use this to reduce network traffic when transmitting a large amount of data, or for creating dumps that are immediately compressed.
+可以通过为每份数据进行立即压缩来减少大规模数据传输中的网络压力。
 
-You can use the 'database' URL parameter to specify the default database.
+可以指定 'database' 参数来指定默认的数据库。
 
 ```bash
 $ echo 'SELECT number FROM numbers LIMIT 10' | curl 'http://localhost:8123/?database=system' --data-binary @-
@@ -153,26 +153,26 @@ $ echo 'SELECT number FROM numbers LIMIT 10' | curl 'http://localhost:8123/?data
 9
 ```
 
-By default, the database that is registered in the server settings is used as the default database. By default, this is the database called 'default'. Alternatively, you can always specify the database using a dot before the table name.
+默认情况下，默认数据库会在服务的配置中注册，默认是 `default`。或者，也可以在表名之前使用一个点来指定数据库。
 
-The username and password can be indicated in one of two ways:
+用户名密码可以通过以下两种方式指定：
 
-1. Using HTTP Basic Authentication. Example:
+1. 通过 HTTP Basic Authentication。示例：
 
 ```bash
 echo 'SELECT 1' | curl 'http://user:password@localhost:8123/' -d @-
 ```
 
-2. In the 'user' and 'password' URL parameters. Example:
+2. 通过 URL 参数 中的 'user' 和 'password'。示例：
 
 ```bash
 echo 'SELECT 1' | curl 'http://localhost:8123/?user=user&password=password' -d @-
 ```
 
-If the user name is not indicated, the username 'default' is used. If the password is not indicated, an empty password is used.
-You can also use the URL parameters to specify any settings for processing a single query, or entire profiles of settings. Example:http://localhost:8123/?profile=web&max_rows_to_read=1000000000&query=SELECT+1
+如果用户名没有指定，默认的用户是 `default`。如果密码没有指定，默认会使用空密码。
+可以使用 URL 参数指定配置或者设置整个配置文件来处理单个查询。示例：`http://localhost:8123/?profile=web&max_rows_to_read=1000000000&query=SELECT+1`
 
-For more information, see the section "Settings".
+更多信息，参见 "[设置](../../operations/settings)" 部分。 
 
 ```bash
 $ echo 'SELECT number FROM system.numbers LIMIT 10' | curl 'http://localhost:8123/?' --data-binary @-
@@ -188,28 +188,28 @@ $ echo 'SELECT number FROM system.numbers LIMIT 10' | curl 'http://localhost:812
 9
 ```
 
-For information about other parameters, see the section "SET".
+更多关于其他参数的信息，参见 "[设置](../../operations/settings)" 部分。 
 
-In contrast to the native interface, the HTTP interface does not support the concept of sessions or session settings, does not allow aborting a query (to be exact, it allows this in only a few cases),  and does not show the progress of query processing. Parsing and data formatting are performed on the server side, and using the network might be ineffective.
-The optional 'query_id' parameter can be passed as the query ID (any string). For more information, see the section "Settings, replace_running_query".
+相比起 TCP 原生接口，HTTP 接口不支持会话和会话设置的概念，不允许中止查询（准确地说，只在少数情况下允许），不显示查询处理的进展。执行解析和数据格式化都是在服务端处理，网络上会比 TCP 原生接口更低效。
 
-The optional 'quota_key' parameter can be passed as the quota key (any string). For more information, see the section "Quotas".
+可选的 `query_id` 参数可能当做 query ID 传入（或者任何字符串）。更多信息，参见 "[设置 replace_running_query](../../operations/settings/settings.html#replace-running-query)" 部分。
 
-The HTTP interface allows passing external data (external temporary tables) for querying. For more information, see the section "External data for query processing".
+可选的 `quota_key` 参数可能当做 quota key 传入（或者任何字符串）。更多信息，参见 "[配额](../../operations/quotas.html)" 部分。
 
-## Response buffering
+HTTP 接口允许传入额外的数据（外部临时表）来查询。更多信息，参见 "[外部数据查询处理](../../table_engines/external_data.html)" 部分。
 
-You can enable response buffering on the server side. The `buffer_size` and `wait_end_of_query` URL parameters are provided for this purpose.
+## 响应缓冲
 
-`buffer_size` determines the number of bytes in the result to buffer in the server memory. If the result body is larger than this threshold, the buffer is written to the HTTP channel, and the remaining data is sent directly to the HTTP channel.
+可以在服务器端启用响应缓冲。提供了 `buffer_size` 和 `wait_end_of_query` 两个URL 参数来达此目的。
 
-To ensure that the entire response is buffered, set `wait_end_of_query=1`. In this case, the data that is not stored in memory will be buffered in a temporary server file.
+`buffer_size` 决定了查询结果要在服务内存中缓冲多少个字节数据. 如果响应体比这个阈值大，缓冲区会写入到 HTTP 管道，剩下的数据也直接发到 HTTP 管道中。
 
-Example:
+为了确保整个响应体被缓冲，可以设置 `wait_end_of_query=1`。这种情况下，存入内存的数据会被缓冲到服务端的一个临时文件中。
+
+示例:
 
 ```bash
 curl -sS 'http://localhost:8123/?max_result_bytes=4000000&buffer_size=3000000&wait_end_of_query=1' -d 'SELECT toUInt8(number) FROM system.numbers LIMIT 9000000 FORMAT RowBinary'
 ```
 
-Use buffering to avoid situations where a query processing error occurred after the response code and HTTP headers were sent to the client. In this situation, an error message is written at the end of the response body, and on the client side, the error can only be detected at the parsing stage.
-
+查询请求响应状态码和 HTTP 头被发送到客户端后，若发生查询处理出错，使用缓冲区可以避免这种情况的发生。在这种情况下，响应主体的结尾会写入一条错误消息，而在客户端，只能在解析阶段检测到该错误。
