@@ -956,6 +956,159 @@ The query can only specify a single ARRAY JOIN clause.
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
 
+JOIN 语句
+
+JOIN标准语句, 与ARRAY JOIN 关系不大.
+
+
+
+[GLOBAL] ANY|ALL INNER|LEFT [OUTER] JOIN (subquery)|table USING columns_list
+在子查询中执行JOIN查询. 在查询处理开始时, 子查询在 JOIN 以后指定, 他的结果保存在内存中. 然后从指定在FROM语句中的"左关联" 表中读取, 在读取过程中, 对于从"左关联" 表中读取的每行记录, 和从子查询结果("右关联")表中查询的数据满足USING中的匹配条件.
+
+
+
+表名能够被指定来替代子查询. 这等于SELECT * FROM table subquery, 在特定情况下，当表有Join 引擎时 – 一个数组准备 join.
+
+
+
+在JOIN中所有的列如果不需要，则从子查询中删除.
+
+
+有如下几种类型的JOIN:
+
+
+INNER 或 LEFT 类型: 如果 INNER 被指定，结果仅包含这些行，在右表中匹配的行. 如果 LEFT 被指定，任何在左表中的行没有匹配右表中的行都将被分配默认值 - zeros or empty rows. LEFT OUTER 可以被写来替代LEFT; OUTER 不影响任何事情。
+
+
+
+ANY 或 ALL 字符串: 如果ANY 被指定和右表有一些匹配的行，只有第一行发现被Join，. 如果 ALL 被指定，右表有一些匹配的行，数据将按照行数相乘.
+
+
+
+使用 ALL 对应的 JOIN 语义. 使用ANY 是最优的. 如果右表仅有一个匹配行, ANY 和 ALL 的结果是相同的. 你必须指定 ANY 或 ALL (默认情况下，2个都不选择).
+
+
+
+GLOBAL 分布:
+
+
+
+当使用 JOIN语句, 查询将被发送至远程服务器. 子查询将被运行在每个节点上，为了让右表和JOIN查询运行在此表上. 换句话说, 右表单独运行在每个服务器上.
+
+
+
+当使用 GLOBAL ... JOIN, 首先 请求服务器运行子查询来计算右表. 此临时表被传递到每个远程服务器, 查询运行在临时表上.
+
+
+
+当使用 GLOBAL JOINs时需要小心. 更多信息, 请查看章节 "分布式子查询".
+
+
+
+任意的JOINs都是有可能的. 例如, GLOBAL ANY LEFT OUTER JOIN.
+
+
+
+当运行一个 JOIN时, 执行顺序没有优化，和其他的查询阶段相比. Join在WHERE过滤之前和聚合之前被执行. 为了设置处理顺序, 我们推荐在一个子查询里运行一个JOIN子查询.
+
+
+
+示例:
+
+SELECT
+    CounterID,
+    hits,
+    visits
+FROM
+(
+    SELECT
+        CounterID,
+        count() AS hits
+    FROM test.hits
+    GROUP BY CounterID
+) ANY LEFT JOIN
+(
+    SELECT
+        CounterID,
+        sum(Sign) AS visits
+    FROM test.visits
+    GROUP BY CounterID
+) USING CounterID
+ORDER BY hits DESC
+LIMIT 10
+┌─CounterID─┬───hits─┬─visits─┐
+│   1143050 │ 523264 │  13665 │
+│    731962 │ 475698 │ 102716 │
+│    722545 │ 337212 │ 108187 │
+│    722889 │ 252197 │  10547 │
+│   2237260 │ 196036 │   9522 │
+│  23057320 │ 147211 │   7689 │
+│    722818 │  90109 │  17847 │
+│     48221 │  85379 │   4652 │
+│  19762435 │  77807 │   7026 │
+│    722884 │  77492 │  11056 │
+└───────────┴────────┴────────┘
+
+子查询不允许你设置名称或使用他们，对于从一个特定的查询中引用一个列. 指定在 USING 中的列必须在两个子查询中都有相同的名字, 其他的列必须单独命名. 在子查询中你可以使用别名来更改列的名称，和在子查询中的列 (例如别名使用 'hits' 和 'visits').
+
+
+
+USING 语句指定一个或多个列进行Join, 建立这些列的等值列. 列的列表被设置不需要brackets. 因此不支持复杂JOIN条件.
+
+
+
+右表 (子查询结果) 驻留在内存中. If 如果没有足够的内存，也不能运行 JOIN.
+
+
+
+仅有一个JOIN 能够被指定在一个查询中. 为了运行多个 JOINs, 你能够放它们在子查询中.
+
+
+
+每次一个查询运行相同的 JOIN, 子查询再次运行 – 结果不被缓存. 为了避免这个, 使用特定的'Join' 表引擎, 它是一个预处理数组，在内存中进行join操作. 对于更多信息, 请查看章节 "表引擎, Join".
+
+
+
+在一些情况下，使用 IN 语句比 JOIN 效率更高。在不同类型的JOIN查询下，最高效的是ANY LEFT JOIN，其次是ANY INNER JOIN，最后是ALL LEFT JOIN 和 ALL INNER JOIN.
+
+如果你想要一个JOIN 来关联维度表 (这些是一些小表，包含维度属性, 如营销活动的名称), 一个 JOIN 可能并不是特别合适，由于 bulky 的语句，右表对于每个查询重新访问. 在这些场景下, 有一个 "外部字典" 特性，你应该使用它来替换 JOIN. 更多信息, 请查看章节 "外部字典".
+
+
+
+### WHERE 语句
+
+如果有一个 WHERE 语句, 它必须包含一个带有UInt8类型的表达式. 通常情况下是带有比较和逻辑操作符的表达式.
+此表达式将被用于在所有其他转换之前过滤数据.
+
+如果数据库表引擎支持索引, 表达式使用索引来评估.
+
+### PREWHERE 语句
+
+此语句与WHERE语句效果相同. 主要区别是数据从表中读取.
+当使用 PREWHERE 时, 首先, 只有执行PREWHERE语句的列被读取. 然后, 其他列在运行query查询时被读取, 只读取当PREWHERE表达式为 ture时这些数据块.
+
+如果有过滤条件, 不适合索引, 使用PREWHERE是有意义的, 在查询中被用于少数列, 但是提供了一个很强有力的数据过滤. 这减少了数据量的读取.
+
+例如, 使用PREWHERE进行抽取大量的列是有非常有用的, 但是仅为一些列进行过滤.
+
+PREWHERE 仅被`*MergeTree`表引擎家族支持.
+
+一个查询可能同时指定 PREWHERE 和 WHERE. 在这种情况下, PREWHERE 优先于 WHERE.
+
+切记, 对于PREWHERE来说, 仅指定有索引的列并没有太大意义, 因为当你使用一个索引, 仅有匹配索引的数据块被读取.
+
+如果 'optimize_move_to_prewhere' 设置被设为1, 同时 PREWHERE 被忽略, 此系统使用启发式自动从WHERE到PREWHERE 移动表达式的部分.
+
+### GROUP BY 语句
+
+这是列式DBMS最重要的部分.
+
+如果有一个 GROUP BY 语句, 它必包含一个表达式列表. 每个表达式将被引用作为一个"key".
+在SELECT, HAVING, 和 ORDER BY 语句中的所有的表达式必须从 keys 中或aggregate函数中被计算. 换句话说, 从表中查询出来的列必须被用在 keys 或在 aggregate 函数中.
+
+如果一个查询仅包含表的列在aggregate函数中, GROUP BY 语句能够忽略, 同时假设通过一个keys的空集合进行聚合.
+
+示例:
 
 ```sql
 SELECT
