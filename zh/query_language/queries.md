@@ -955,135 +955,7 @@ The query can only specify a single ARRAY JOIN clause.
 
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
-### JOIN clause
 
-The normal JOIN, which is not related to ARRAY JOIN described above.
-
-```sql
-[GLOBAL] ANY|ALL INNER|LEFT [OUTER] JOIN (subquery)|table USING columns_list
-```
-
-Performs joins with data from the subquery. At the beginning of query processing, the subquery specified after JOIN is run, and its result is saved in memory. Then it is read from the "left" table specified in the FROM clause, and while it is being read, for each of the read rows from the "left" table, rows are selected from the subquery results table (the "right" table) that meet the condition for matching the values of the columns specified in USING.
-
-The table name can be specified instead of a subquery. This is equivalent to the `SELECT * FROM table` subquery, except in a special case when the table has the Join engine – an array prepared for joining.
-
-All columns that are not needed for the JOIN are deleted from the subquery.
-
-There are several types of JOINs:
-
-`INNER` or `LEFT` type:
-If INNER is specified, the result will contain only those rows that have a matching row in the right table.
-If LEFT is specified, any rows in the left table that don't have matching rows in the right table will be assigned the default value - zeros or empty rows. LEFT OUTER may be written instead of LEFT; the word OUTER does not affect anything.
-
-`ANY` or `ALL` stringency:If `ANY` is specified and the right table has several matching rows, only the first one found is joined.
-If `ALL` is specified and the right table has several matching rows, the data will be multiplied by the number of these rows.
-
-Using ALL corresponds to the normal JOIN semantic from standard SQL.
-Using ANY is optimal. If the right table has only one matching row, the results of ANY and ALL are the same. You must specify either ANY or ALL (neither of them is selected by default).
-
-`GLOBAL` distribution:
-
-When using a normal JOIN, the query is sent to remote servers. Subqueries are run on each of them in order to make the right table, and the join is performed with this table. In other words, the right table is formed on each server separately.
-
-When using `GLOBAL ... JOIN`, first the requestor server runs a subquery to calculate the right table. This temporary table is passed to each remote server, and queries are run on them using the temporary data that was transmitted.
-
-Be careful when using GLOBAL JOINs. For more information, see the section "Distributed subqueries".
-
-Any combination of JOINs is possible. For example, `GLOBAL ANY LEFT OUTER JOIN`.
-
-When running a JOIN, there is no optimization of the order of execution in relation to other stages of the query. The join (a search in the right table) is run before filtering in WHERE and before aggregation. In order to explicitly set the processing order, we recommend running a JOIN subquery with a subquery.
-
-Example:
-
-```sql
-SELECT
-    CounterID,
-    hits,
-    visits
-FROM
-(
-    SELECT
-        CounterID,
-        count() AS hits
-    FROM test.hits
-    GROUP BY CounterID
-) ANY LEFT JOIN
-(
-    SELECT
-        CounterID,
-        sum(Sign) AS visits
-    FROM test.visits
-    GROUP BY CounterID
-) USING CounterID
-ORDER BY hits DESC
-LIMIT 10
-```
-
-```text
-┌─CounterID─┬───hits─┬─visits─┐
-│   1143050 │ 523264 │  13665 │
-│    731962 │ 475698 │ 102716 │
-│    722545 │ 337212 │ 108187 │
-│    722889 │ 252197 │  10547 │
-│   2237260 │ 196036 │   9522 │
-│  23057320 │ 147211 │   7689 │
-│    722818 │  90109 │  17847 │
-│     48221 │  85379 │   4652 │
-│  19762435 │  77807 │   7026 │
-│    722884 │  77492 │  11056 │
-└───────────┴────────┴────────┘
-```
-
-Subqueries don't allow you to set names or use them for referencing a column from a specific subquery.
-The columns specified in USING must have the same names in both subqueries, and the other columns must be named differently. You can use aliases to change the names of columns in subqueries (the example uses the aliases 'hits' and 'visits').
-
-The USING clause specifies one or more columns to join, which establishes the equality of these columns. The list of columns is set without brackets. More complex join conditions are not supported.
-
-The right table (the subquery result) resides in RAM. If there isn't enough memory, you can't run a JOIN.
-
-Only one JOIN can be specified in a query (on a single level). To run multiple JOINs, you can put them in subqueries.
-
-Each time a query is run with the same JOIN, the subquery is run again – the result is not cached. To avoid this, use the special 'Join' table engine, which is a prepared array for joining that is always in RAM. For more information, see the section "Table engines, Join".
-
-In some cases, it is more efficient to use IN instead of JOIN.
-Among the various types of JOINs, the most efficient is ANY LEFT JOIN, then ANY INNER JOIN. The least efficient are ALL LEFT JOIN and ALL INNER JOIN.
-
-If you need a JOIN for joining with dimension tables (these are relatively small tables that contain dimension properties, such as names for advertising campaigns), a JOIN might not be very convenient due to the bulky syntax and the fact that the right table is re-accessed for every query. For such cases, there is an "external dictionaries" feature that you should use instead of JOIN. For more information, see the section "External dictionaries".
-
-### WHERE clause
-
-If there is a WHERE clause, it must contain an expression with the UInt8 type. This is usually an expression with comparison and logical operators.
-This expression will be used for filtering data before all other transformations.
-
-If indexes are supported by the database table engine, the expression is evaluated on the ability to use indexes.
-
-### PREWHERE clause
-
-This clause has the same meaning as the WHERE clause. The difference is in which data is read from the table.
-When using PREWHERE, first only the columns necessary for executing PREWHERE are read. Then the other columns are read that are needed for running the query, but only those blocks where the PREWHERE expression is true.
-
-It makes sense to use PREWHERE if there are filtration conditions that are not suitable for indexes that are used by a minority of the columns in the query, but that provide strong data filtration. This reduces the volume of data to read.
-
-For example, it is useful to write PREWHERE for queries that extract a large number of columns, but that only have filtration for a few columns.
-
-PREWHERE is only supported by tables from the `*MergeTree` family.
-
-A query may simultaneously specify PREWHERE and WHERE. In this case, PREWHERE precedes WHERE.
-
-Keep in mind that it does not make much sense for PREWHERE to only specify those columns that have an index, because when using an index, only the data blocks that match the index are read.
-
-If the 'optimize_move_to_prewhere' setting is set to 1 and PREWHERE is omitted, the system uses heuristics to automatically move parts of expressions from WHERE to PREWHERE.
-
-### GROUP BY clause
-
-This is one of the most important parts of a column-oriented DBMS.
-
-If there is a GROUP BY clause, it must contain a list of expressions. Each expression will be referred to here as a "key".
-All the expressions in the SELECT, HAVING, and ORDER BY clauses must be calculated from keys or from aggregate functions. In other words, each column selected from the table must be used either in keys or inside aggregate functions.
-
-If a query contains only table columns inside aggregate functions, the GROUP BY clause can be omitted, and aggregation by an empty set of keys is assumed.
-
-Example:
 
 ```sql
 SELECT
@@ -1093,11 +965,11 @@ SELECT
 FROM hits
 ```
 
-However, in contrast to standard SQL, if the table doesn't have any rows (either there aren't any at all, or there aren't any after using WHERE to filter), an empty result is returned, and not the result from one of the rows containing the initial values of aggregate functions.
+然而, 与标准的SQL对比, 如果表中没有任何行 (或者在使用WHERE条件过滤后没有任何行), 一个空的结果将返回, 同时并不是包含使用聚合函数初始值的行的结果.
 
-As opposed to MySQL (and conforming to standard SQL), you can't get some value of some column that is not in a key or aggregate function (except constant expressions). To work around this, you can use the 'any' aggregate function (get the first encountered value) or 'min/max'.
+与MySQL对比 (符合标准 SQL 语句), 你不能获得某列的某值, 列不在key中或在聚合函数中 (常量表达式除外). 为了让其工作, 你能够使用 'any' 聚合函数 (获得第一个遇到的值) 或者 'min/max'.
 
-Example:
+示例:
 
 ```sql
 SELECT
@@ -1108,11 +980,11 @@ FROM hits
 GROUP BY domain
 ```
 
-For every different key value encountered, GROUP BY calculates a set of aggregate function values.
+对于每个不同的 KV 键值, GROUP BY 计算了聚合函数值的集合.
 
-GROUP BY is not supported for array columns.
+GROUP BY 不支持数组列.
 
-A constant can't be specified as arguments for aggregate functions. Example: sum(1). Instead of this, you can get rid of the constant. Example: `count()`.
+一个常量不能被指定作为聚合函数的参数. 例如: sum(1). 你能够去掉常量. 例如: `count()`.
 
 #### WITH TOTALS modifier
 
