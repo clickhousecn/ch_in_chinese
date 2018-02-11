@@ -1100,40 +1100,40 @@ If you need a JOIN for joining with dimension tables (these are relatively small
 
 
 
-### WHERE clause
+### WHERE 语句
 
-If there is a WHERE clause, it must contain an expression with the UInt8 type. This is usually an expression with comparison and logical operators.
-This expression will be used for filtering data before all other transformations.
+如果有一个 WHERE 语句, 它必须包含一个带有UInt8类型的表达式. 通常情况下是带有比较和逻辑操作符的表达式.
+此表达式将被用于在所有其他转换之前过滤数据.
 
-If indexes are supported by the database table engine, the expression is evaluated on the ability to use indexes.
+如果数据库表引擎支持索引, 表达式使用索引来评估.
 
-### PREWHERE clause
+### PREWHERE 语句
 
-This clause has the same meaning as the WHERE clause. The difference is in which data is read from the table.
-When using PREWHERE, first only the columns necessary for executing PREWHERE are read. Then the other columns are read that are needed for running the query, but only those blocks where the PREWHERE expression is true.
+此语句与WHERE语句效果相同. 主要区别是数据从表中读取.
+当使用 PREWHERE 时, 首先, 只有执行PREWHERE语句的列被读取. 然后, 其他列在运行query查询时被读取, 只读取当PREWHERE表达式为 ture时这些数据块.
 
-It makes sense to use PREWHERE if there are filtration conditions that are not suitable for indexes that are used by a minority of the columns in the query, but that provide strong data filtration. This reduces the volume of data to read.
+如果有过滤条件, 不适合索引, 使用PREWHERE是有意义的, 在查询中被用于少数列, 但是提供了一个很强有力的数据过滤. 这减少了数据量的读取.
 
-For example, it is useful to write PREWHERE for queries that extract a large number of columns, but that only have filtration for a few columns.
+例如, 使用PREWHERE进行抽取大量的列是有非常有用的, 但是仅为一些列进行过滤.
 
-PREWHERE is only supported by tables from the `*MergeTree` family.
+PREWHERE 仅被`*MergeTree`表引擎家族支持.
 
-A query may simultaneously specify PREWHERE and WHERE. In this case, PREWHERE precedes WHERE.
+一个查询可能同时指定 PREWHERE 和 WHERE. 在这种情况下, PREWHERE 优先于 WHERE.
 
-Keep in mind that it does not make much sense for PREWHERE to only specify those columns that have an index, because when using an index, only the data blocks that match the index are read.
+切记, 对于PREWHERE来说, 仅指定有索引的列并没有太大意义, 因为当你使用一个索引, 仅有匹配索引的数据块被读取.
 
-If the 'optimize_move_to_prewhere' setting is set to 1 and PREWHERE is omitted, the system uses heuristics to automatically move parts of expressions from WHERE to PREWHERE.
+如果 'optimize_move_to_prewhere' 设置被设为1, 同时 PREWHERE 被忽略, 此系统使用启发式自动从WHERE到PREWHERE 移动表达式的部分.
 
-### GROUP BY clause
+### GROUP BY 语句
 
-This is one of the most important parts of a column-oriented DBMS.
+这是列式DBMS最重要的部分.
 
-If there is a GROUP BY clause, it must contain a list of expressions. Each expression will be referred to here as a "key".
-All the expressions in the SELECT, HAVING, and ORDER BY clauses must be calculated from keys or from aggregate functions. In other words, each column selected from the table must be used either in keys or inside aggregate functions.
+如果有一个 GROUP BY 语句, 它必包含一个表达式列表. 每个表达式将被引用作为一个"key".
+在SELECT, HAVING, 和 ORDER BY 语句中的所有的表达式必须从 keys 中或aggregate函数中被计算. 换句话说, 从表中查询出来的列必须被用在 keys 或在 aggregate 函数中.
 
-If a query contains only table columns inside aggregate functions, the GROUP BY clause can be omitted, and aggregation by an empty set of keys is assumed.
+如果一个查询仅包含表的列在aggregate函数中, GROUP BY 语句能够忽略, 同时假设通过一个keys的空集合进行聚合.
 
-Example:
+示例:
 
 ```sql
 SELECT
@@ -1143,11 +1143,11 @@ SELECT
 FROM hits
 ```
 
-However, in contrast to standard SQL, if the table doesn't have any rows (either there aren't any at all, or there aren't any after using WHERE to filter), an empty result is returned, and not the result from one of the rows containing the initial values of aggregate functions.
+然而, 与标准的SQL对比, 如果表中没有任何行 (或者在使用WHERE条件过滤后没有任何行), 一个空的结果将返回, 同时并不是包含使用聚合函数初始值的行的结果.
 
-As opposed to MySQL (and conforming to standard SQL), you can't get some value of some column that is not in a key or aggregate function (except constant expressions). To work around this, you can use the 'any' aggregate function (get the first encountered value) or 'min/max'.
+与MySQL对比 (符合标准 SQL 语句), 你不能获得某列的某值, 列不在key中或在聚合函数中 (常量表达式除外). 为了让其工作, 你能够使用 'any' 聚合函数 (获得第一个遇到的值) 或者 'min/max'.
 
-Example:
+示例:
 
 ```sql
 SELECT
@@ -1158,11 +1158,11 @@ FROM hits
 GROUP BY domain
 ```
 
-For every different key value encountered, GROUP BY calculates a set of aggregate function values.
+对于每个不同的 KV 键值, GROUP BY 计算了聚合函数值的集合.
 
-GROUP BY is not supported for array columns.
+GROUP BY 不支持数组列.
 
-A constant can't be specified as arguments for aggregate functions. Example: sum(1). Instead of this, you can get rid of the constant. Example: `count()`.
+一个常量不能被指定作为聚合函数的参数. 例如: sum(1). 你能够去掉常量. 例如: `count()`.
 
 #### WITH TOTALS modifier
 
