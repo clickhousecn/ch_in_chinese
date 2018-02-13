@@ -37,29 +37,29 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 `IDataType` 对于不同的数据格式都有辅助方法。比如说序列化可能包含引号的值，序列化成 JSON，序列化成 XML 格式的一部分等。但这些辅助方法与数据格式没有一一对应的关系。例如，数据格式 `Pretty` 和 `TabSeparated` 都可以使用 `IDataType` 接口的 `serializeTextEscaped` 辅助方法。
 
-## Block
+## 区块（Block）
 
-A `Block` is a container that represents a subset (chunk) of a table in memory. It is just a set of triples: `(IColumn, IDataType, column name)`. During query execution, data is processed by `Block`s. If we have a `Block`, we have data (in the `IColumn` object), we have information about its type (in `IDataType`) that tells us how to deal with that column, and we have the column name (either the original column name from the table, or some artificial name assigned for getting temporary results of calculations).
+区块用于在内存中表示表的一部分；它其实是个三元组：`(IColumn, IDataType, column name)`。查询在执行时，数据将以区块为单位处理。一个区块里面含有数据（在 `IColumn` 对象里面），用于告知我们如何处理这个列的类型信息（在 `IDataType`），还有列名（有可能来源于表的原始的列名，又或者人工命名的存储临时计算的结果的列名。
 
-When we calculate some function over columns in a block, we add another column with its result to the block, and we don't touch columns for arguments of the function because operations are immutable. Later, unneeded columns can be removed from the block, but not modified. This is convenient for elimination of common subexpressions.
+当我们需要基于某个区块里面的列去计算某些函数的值时，我们会加在这个区块中加入一个新列来存储计算结果；我们不需要用到原始列，因为所有这些操作都不会改变原始列的值（immutable）。然后，不需要的列会直接从区块中删除（而不是改变其值）。这会为消除常见的字表达式提供方便。
 
-Blocks are created for every processed chunk of data. Note that for the same type of calculation, the column names and types remain the same for different blocks, and only column data changes. It is better to split block data from the block header, because small block sizes will have a high overhead of temporary strings for copying shared_ptrs and column names.
+每部分的被处理的数据都会产生区块。请注意对于相同类型的计算，列名和列类型在不同的区块中用的是相同的对象，只是数据不同。 分开区块头和数据会给我们带来好处，因为不这样做的话，小的区块需要额外付出存储列名和共享指针（shared_ptrs）的代价。
 
-## Block Streams
+## 区块流（Block Streams）
 
-Block streams are for processing data. We use streams of blocks to read data from somewhere, perform data transformations, or write data to somewhere. `IBlockInputStream` has the `read` method to fetch the next block while available. `IBlockOutputStream` has the `write` method to push the block somewhere.
+区块流用于处理数据。我们用区块流来从一个地方读数据，做数据变换，或者把数据写在另一个地方。其中 `IBlockInputStream` 有用于拿到下一个可读区块的 `read` 方法， `IBlockOutputStream` 有用于将区块写到某个地方的 `write` 方法。
 
-Streams are responsible for:
+区块流用于：
 
-1.  Reading or writing to a table. The table just returns a stream for reading or writing blocks.
-2.  Implementing data formats. For example, if you want to output data to a terminal in `Pretty` format, you create a block output stream where you push blocks, and it formats them.
-3.  Performing data transformations. Let's say you have `IBlockInputStream` and want to create a filtered stream. You create `FilterBlockInputStream` and initialize it with your stream. Then when you pull a block from `FilterBlockInputStream`, it pulls a block from your stream, filters it, and returns the filtered block to you. Query execution pipelines are represented this way.
+1. 读写一个表。该表返回一个用于读或者写区块的流。
+2. 实现数据格式。比如，如果你想在终端以 `Pretty` 数据格式显示数据，你需要把区块推送到一个一个区块输出流，然后让该区块流格式化其数据。
+3. 进行数据变换。假设你有一个 `IBlockInputStream`，并且你想筛选部分数据。你可以新建一个 `FilterBlockInputStream`，并用你的区块流来初始化这个区块流。这样当你从 `FilterBlockInputStream` 获取区块时，它会从你的区块流里面拿到区块，根据条件过滤一下，然后返回过滤后的区块给你。查询执行的流水线都以这样的方式表示。
 
-There are more sophisticated transformations. For example, when you pull from `AggregatingBlockInputStream`, it reads all data from its source, aggregates it, and then returns a stream of aggregated data for you. Another example: `UnionBlockInputStream` accepts many input sources in the constructor and also a number of threads. It launches multiple threads and reads from multiple sources in parallel.
+我们有更复杂的数据变换。比如，当你从 `AggregatingBlockInputStream` 拿数据时，它会先从它的数据来源读取所有的数据，进行聚合，然后返回一个聚合过的流给你。另一个例子是 `UnionBlockInputStream`，它可以在构造函数中接受多个输入源和线程数，然后发起相应的线程并行地从输入源中读取数据。
 
-> Block streams use the "pull" approach to control flow: when you pull a block from the first stream, it consequently pulls the required blocks from nested streams, and the entire execution pipeline will work. Neither "pull" nor "push" is the best solution, because control flow is implicit, and that limits implementation of various features like simultaneous execution of multiple queries (merging many pipelines together). This limitation could be overcome with coroutines or just running extra threads that wait for each other. We may have more possibilities if we make control flow explicit: if we locate the logic for passing data from one calculation unit to another outside of those calculation units. Read this [nice article](http://journal.stuffwithstuff.com/2013/01/13/iteration-inside-and-out/) for more thoughts.
+> 区块流是用“拉”的方法来实现流程控制：当你从第一个流拉一个区块的时候，它会从它的上游的流将所需要的区块也拉下来，带动整个执行流水线。“拉”和“推”其实都不是最好的解决方案，因为这样的话控制流程就不能显式地表现出来，从而限制了很多特性的实现，其中包括多查询同步执行（合并多重流水线）。我们可以使用协程或者额外的互相等待的线程来克服这个限制，但如果我们能把控制流程显式表示，我们会有更多的可能性：比如说如果我们知道什么时候程序把数据从一个计算单位传给另一个计算单位的时候。更多的想法请参阅这篇 [很好的文章](http://journal.stuffwithstuff.com/2013/01/13/iteration-inside-and-out/)。
 >
-> We should note that the query execution pipeline creates temporary data at each step. We try to keep block size small enough so that temporary data fits in the CPU cache. With that assumption, writing and reading temporary data is almost free in comparison with other calculations. We could consider an alternative, which is to fuse many operations in the pipeline together, to make the pipeline as short as possible and remove much of the temporary data. This could be an advantage, but it also has drawbacks. For example, a split pipeline makes it easy to implement caching intermediate data, stealing intermediate data from similar queries running at the same time, and merging pipelines for similar queries.
+> 要注意的是，在每一步里，查询执行流水线都会创建临时的数据。为了能让临时的数据完整地放进 CPU 缓存，我们尽量会控制每个区块的大小足够小。如果这个前提成立的话，读写临时数据相对于其他计算操作所需的时间几乎可以忽略不计。另一种可能性是将同一流水线里的很多操作合并在一起，这样可以让流水线很短，因而不需要太多的临时数据。这有其好处，但也有一些不足。比如，一个分段的流水线可以很容易实现缓存运算中间的结果，同时“偷取”其它类似的查询的运算中间的结果，以及合并类似查询的流水线。
 
 ## Formats
 
