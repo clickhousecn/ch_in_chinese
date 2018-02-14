@@ -61,23 +61,23 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 >
 > 要注意的是，在每一步里，查询执行流水线都会创建临时的数据。为了能让临时的数据完整地放进 CPU 缓存，我们尽量会控制每个区块的大小足够小。如果这个前提成立的话，读写临时数据相对于其他计算操作所需的时间几乎可以忽略不计。另一种可能性是将同一流水线里的很多操作合并在一起，这样可以让流水线很短，因而不需要太多的临时数据。这有其好处，但也有一些不足。比如，一个分段的流水线可以很容易实现缓存运算中间的结果，同时“偷取”其它类似的查询的运算中间的结果，以及合并类似查询的流水线。
 
-## Formats
+## 格式
 
-Data formats are implemented with block streams. There are "presentational" formats only suitable for output of data to the client, such as `Pretty` format, which provides only `IBlockOutputStream`. And there are input/output formats, such as `TabSeparated` or `JSONEachRow`.
+数据格式是在区块流中实现的。其中有专门为展示用的给客户端的输出格式，比如 `Pretty` 格式, 只由 `IBlockOutputStream` 提供（译者注：`PrettyBlockOutputStream` 继承 `IBlockOutputStream`）. 也有一些同时支持输入格式和输出格式，比如 `TabSeparated` 和 `JSONEachRow`。
 
-There are also row streams: `IRowInputStream` and `IRowOutputStream`. They allow you to pull/push data by individual rows, not by blocks. And they are only needed to simplify implementation of row-oriented formats. The wrappers `BlockInputStreamFromRowInputStream` and `BlockOutputStreamFromRowOutputStream` allow you to convert row-oriented streams to regular block-oriented streams.
+另外还有基于行的流 `IRowInputStream` 和 `IRowOutputStream`。它们允你许以每行为单位（而不是区块）来推/拉数据。事实上它们只是用来简化基于行的格式的实现：包装类 `BlockInputStreamFromRowInputStream` 和and `BlockOutputStreamFromRowOutputStream` 可以将基于行的流转化成正常的基于区块的流。
 
 ## I/O
 
-For byte-oriented input/output, there are `ReadBuffer` and `WriteBuffer` abstract classes. They are used instead of C++ `iostream`'s. Don't worry: every mature C++ project is using something other than `iostream`'s for good reasons.
+抽象类 `ReadBuffer` 和 `WriteBuffer` 用于基于字节的 input/output，而不是原生的 C++ `iostream` 里面的相应的类。别担心，任何一个足够成熟的 C++ 项目都会有其充分的理由不去用 `iostream`。
 
-`ReadBuffer` and `WriteBuffer` are just a contiguous buffer and a cursor pointing to the position in that buffer. Implementations may own or not own the memory for the buffer. There is a virtual method to fill the buffer with the following data (for `ReadBuffer`) or to flush the buffer somewhere (for `WriteBuffer`). The virtual methods are rarely called.
+`ReadBuffer` 和 `WriteBuffer` 本质上就是一段连续的缓冲区和一个指向缓冲区某个位置的指针。其实现有可能（也有可能不）管理缓冲区所占的内存的周期。`ReadBuffer` 有一个虚函数方法用于填充数据，`WriteBuffer` 有一个虚函数方法用于将缓冲区的内容清空并输出到另一个地方，不过这些虚函数方法很少被用到。
 
-Implementations of `ReadBuffer`/`WriteBuffer` are used for working with files and file descriptors and network sockets, for implementing compression (`CompressedWriteBuffer` is initialized with another WriteBuffer and performs compression before writing data to it), and for other purposes – the names `ConcatReadBuffer`, `LimitReadBuffer`, and `HashingWriteBuffer` speak for themselves.
+ `ReadBuffer` 和 `WriteBuffer` 的具体实现通常用于1）文件，文件描述符和网络套接字；2）压缩（`CompressedWriteBuffer` 初始化时需要用另外一个 WriteBuffer，进行压缩，然后才输出到其他地方；3）其他目的，比如 `ConcatReadBuffer`（连接多个缓冲区的读缓冲区）， `LimitReadBuffer`（有上限的读缓冲区）和 `HashingWriteBuffer`（哈希化写缓冲区）————类名应该很能说明其用途了。
 
-Read/WriteBuffers only deal with bytes. To help with formatted input/output (for instance, to write a number in decimal format), there are functions from `ReadHelpers` and `WriteHelpers` header files.
+`ReadBuffer` 和 `WriteBuffer` 假设输入输出都是字节。如果需要格式化的输入输出（比如，用十进制输出数字），可以使用 `ReadHelpers` 和 `WriteHelpers` 头文件里面的辅助函数。
 
-Let's look at what happens when you want to write a result set in `JSON` format to stdout. You have a result set ready to be fetched from `IBlockInputStream`. You create `WriteBufferFromFileDescriptor(STDOUT_FILENO)` to write bytes to stdout. You create `JSONRowOutputStream`, initialized with that `WriteBuffer`, to write rows in `JSON` to stdout. You create `BlockOutputStreamFromRowOutputStream` on top of it, to represent it as `IBlockOutputStream`. Then you call `copyData` to transfer data from `IBlockInputStream` to `IBlockOutputStream`, and everything works. Internally, `JSONRowOutputStream` will write various JSON delimiters and call the `IDataType::serializeTextJSON` method with a reference to `IColumn` and the row number as arguments. Consequently, `IDataType::serializeTextJSON` will call a method from `WriteHelpers.h`: for example, `writeText` for numeric types and `writeJSONString` for `DataTypeString`.
+让我们看一下当我们把结果写成 `JSON` 格式并输出到 stdout ，其中发生了什么。假设结果集存在某个 `IBlockInputStream`里。我们倒推一下整个写的过程：在最后一步我们需要一个 `WriteBufferFromFileDescriptor(STDOUT_FILENO)` 来将字节写到 stdout。为了生成 `JSONRow` 格式的字节，我们需要一个 `JSONRowOutputStream`，而这个流需要用上面这个 `WriteBuffer` 来初始化。由于 `JSONRowOutputStream` 是一个基于行的流，我们还需要继承了 `IBlockOutputStream` 的 `BlockOutputStreamFromRowOutputStream` 将本来基于区块的流转化为基于行的流。现在我们拥有一个 `IBlockInputStream` 和一个 `IBlockOutputStream`，我们可以执行 `copyData` 方法将 `IBlockInputStream` 里面的数据转移到 `IBlockOutputStream` 里面去。若要细究内部实现的话，`JSONRowOutputStream` 负责写不同的 JSON 分隔符，然后以 `IColumn` 引用和行数作为参数来执行方法 `IDataType::serializeTextJSON`。 接着，`IDataType::serializeTextJSON` 会根据不同的类型来执行 `WriteHelpers.h`里面的某个方法：比如遇到数字时执行 `writeText`，遇到字符串时执行 `writeJSONString`。
 
 ## Tables
 
