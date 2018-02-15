@@ -77,34 +77,33 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 `ReadBuffer` 和 `WriteBuffer` 假设输入输出都是字节。如果需要格式化的输入输出（比如，用十进制输出数字），可以使用 `ReadHelpers` 和 `WriteHelpers` 头文件里面的辅助函数。
 
-让我们看一下当我们把结果写成 `JSON` 格式并输出到 stdout ，其中发生了什么。假设结果集存在某个 `IBlockInputStream`里。我们倒推一下整个写的过程：在最后一步我们需要一个 `WriteBufferFromFileDescriptor(STDOUT_FILENO)` 来将字节写到 stdout。为了生成 `JSONRow` 格式的字节，我们需要一个 `JSONRowOutputStream`，而这个流需要用上面这个 `WriteBuffer` 来初始化。由于 `JSONRowOutputStream` 是一个基于行的流，我们还需要继承了 `IBlockOutputStream` 的 `BlockOutputStreamFromRowOutputStream` 将本来基于区块的流转化为基于行的流。现在我们拥有一个 `IBlockInputStream` 和一个 `IBlockOutputStream`，我们可以执行 `copyData` 方法将 `IBlockInputStream` 里面的数据转移到 `IBlockOutputStream` 里面去。若要细究内部实现的话，`JSONRowOutputStream` 负责写不同的 JSON 分隔符，然后以 `IColumn` 引用和行数作为参数来执行方法 `IDataType::serializeTextJSON`。 接着，`IDataType::serializeTextJSON` 会根据不同的类型来执行 `WriteHelpers.h`里面的某个方法：比如遇到数字时执行 `writeText`，遇到字符串时执行 `writeJSONString`。
+让我们看一下当我们把结果写成 `JSON` 格式并输出到 stdout ，其中发生了什么。假设结果集存在某个 `IBlockInputStream`里。我们倒推一下整个写的过程：在最后一步我们需要一个 `WriteBufferFromFileDescriptor(STDOUT_FILENO)` 来将字节写到 stdout。为了生成 `JSONRow` 格式的字节，我们需要一个 `JSONRowOutputStream`，而这个流需要用上面这个 `WriteBuffer` 来初始化。由于 `JSONRowOutputStream` 是一个基于行的流，我们还需要继承了 `IBlockOutputStream` 的 `BlockOutputStreamFromRowOutputStream` 将本来基于区块的流转化为基于行的流。现在我们拥有一个 `IBlockInputStream` 和一个 `IBlockOutputStream`，我们可以调用 `copyData` 方法将 `IBlockInputStream` 里面的数据转移到 `IBlockOutputStream` 里面去。若要细究内部实现的话，`JSONRowOutputStream` 负责写不同的 JSON 分隔符，然后以 `IColumn` 引用和行数作为参数来调用方法 `IDataType::serializeTextJSON`。 接着，`IDataType::serializeTextJSON` 会根据不同的类型来调用 `WriteHelpers.h`里面的某个方法：比如遇到数字时调用 `writeText`，遇到字符串时调用 `writeJSONString`。
 
-## Tables
+## 表
 
-Tables are represented by the `IStorage` interface. Different implementations of that interface are different table engines. Examples are `StorageMergeTree`, `StorageMemory`, and so on. Instances of these classes are just tables.
+表在代码里用 `IStorage` 接口表示。不同的表引擎会使用不同的接口实现，比如 `StorageMergeTree`，`StorageMemory`，等等。这些类相应的对象其实都是表。
 
-The most important `IStorage` methods are `read` and `write`. There are also `alter`, `rename`, `drop`, and so on. The `read` method accepts the following arguments: the set of columns to read from a table, the `AST` query to consider, and the desired number of streams to return. It returns one or multiple `IBlockInputStream` objects and information about the stage of data processing that was completed inside a table engine during query execution.
+`IStorage` 最重要的方法是 `read` 和 `write`，其次还有其它方法，包括 `alter`，`rename`，`drop`，等等。`read` 方法包括一下参数：需要从表中读取的所有列，以 `AST`（抽象语法树）表示的查询语句，以及期望返回的流的数目。函数返回1）一个或多个 `IBlockInputStream` 对象；2）关于在查询执行途中在这个表引擎里完成了的数据处理的信息。
 
-In most cases, the read method is only responsible for reading the specified columns from a table, not for any further data processing. All further data processing is done by the query interpreter and is outside the responsibility of `IStorage`.
+大多数情况下，`read` 只需要负责从一个表里面读取制定的列。查询解释器会负责剩下的数据处理。.
 
-But there are notable exceptions:
-- The AST query is passed to the `read` method and the table engine can use it to derive index usage and to read less data from a table.
-- Sometimes the table engine can process data itself to a specific stage. For example, `StorageDistributed` can send a query to remote servers, ask them to process data to a stage where data from different remote servers can be merged, and return that preprocessed data.
-The query interpreter then finishes processing the data.
+但也有几种值得注意的例外：
+- 表引擎可以利用传进 `read` 方法里的 AST 查询推导出是否或者如何使用索引，进而减少从表里读出来的数据量；
+- 有时在某一步中表引擎自己也可以自行处理数据。例如， `StorageDistributed` 可以发一个查询到别的服务器，让它们去处理数据，然后将返回的数据进行汇总，再将汇总后的数据返回，最后让查询解析器做收尾的工作。
 
-The table's `read` method can return multiple `IBlockInputStream` objects to allow parallel data processing. These multiple block input streams can read from a table in parallel. Then you can wrap these streams with various transformations (such as expression evaluation or filtering) that can be calculated independently and create a `UnionBlockInputStream` on top of them, to read from multiple streams in parallel.
+前文已述表的 `read` 方法可以通过返回多个 `IBlockInputStream` 对象来并行处理数据。这多个区块输入流可以从一个表中并行地读入数据。然后你可以将每个流用多个变换包装起来（比如表达式计算，或者筛选结果）。这些流将会被独立地计算，然后可以被放在一个 `UnionBlockInputStream` 里面，以完成并行用多个流读数据的工作。
 
-There are also `TableFunction`s. These are functions that return a temporary `IStorage` object to use in the `FROM` clause of a query.
+`TableFunction` 是指用于返回一个临时的 `IStorage` 对象的函数，用于 `FROM` 子语句。
 
-To get a quick idea of how to implement your own table engine, look at something simple, like `StorageMemory` or `StorageTinyLog`.
+如果你想知道一个表引擎的轮廓如何编写，可以看看简单的例子，比如 `StorageMemory` 和 `StorageTinyLog`。
 
-> As the result of the `read` method, `IStorage` returns `QueryProcessingStage` – information about what parts of the query were already calculated inside storage. Currently we have only very coarse granularity for that information. There is no way for the storage to say "I have already processed this part of the expression in WHERE, for this range of data". We need to work on that.
+> `IStorage` 的 `read` 方法返回 `QueryProcessingStage`，里面包含在这个存储器里查询里的哪些 parts 已经进行的计算。目前我们只提供粒度很低的信息，而没办法提供类似于“目前进度是这个 part 里面的某个范围里的数据已经处理好了”这种级别的信息。
 
-## Parsers
+## Parsers （解析器）
 
-A query is parsed by a hand-written recursive descent parser. For example, `ParserSelectQuery` just recursively calls the underlying parsers for various parts of the query. Parsers create an `AST`. The `AST` is represented by nodes, which are instances of `IAST`.
+在 Clickhouse 里，每个查询都使用手写的递归下降解析器（recursive descent parser）来解析。比如，`ParserSelectQuery` 会递归地调用旗下的解析器去分别解析查询的每个部分。解析器返回的是 `AST`。`AST` 用节点表示，每个节点都是一个 `IAST`。
 
-> Parser generators are not used for historical reasons.
+> 由于历史原因，我们没有使用解析器生成器。
 
 ## Interpreters
 
