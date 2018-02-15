@@ -99,17 +99,17 @@ ClickHouse 是一个列式数据库管理系统。这不仅仅体现在其数据
 
 > `IStorage` 的 `read` 方法返回 `QueryProcessingStage`，里面包含在这个存储器里查询里的哪些 parts 已经进行的计算。目前我们只提供粒度很低的信息，而没办法提供类似于“目前进度是这个 part 里面的某个范围里的数据已经处理好了”这种级别的信息。
 
-## Parsers （解析器）
+## Parsers（解析器）
 
 在 Clickhouse 里，每个查询都使用手写的递归下降解析器（recursive descent parser）来解析。比如，`ParserSelectQuery` 会递归地调用旗下的解析器去分别解析查询的每个部分。解析器返回的是 `AST`。`AST` 用节点表示，每个节点都是一个 `IAST`。
 
 > 由于历史原因，我们没有使用解析器生成器。
 
-## Interpreters
+## Interpreters（解释器）
 
-Interpreters are responsible for creating the query execution pipeline from an `AST`. There are simple interpreters, such as `InterpreterExistsQuery`and `InterpreterDropQuery`, or the more sophisticated `InterpreterSelectQuery`. The query execution pipeline is a combination of block input or output streams. For example, the result of interpreting the `SELECT` query is the `IBlockInputStream` to read the result set from; the result of the INSERT query is the `IBlockOutputStream` to write data for insertion to; and the result of interpreting the `INSERT SELECT` query is the `IBlockInputStream` that returns an empty result set on the first read, but that copies data from `SELECT` to `INSERT` at the same time.
+解释器用于基于一个 `AST` 生成查询执行流水线。简单的解释器包括 `InterpreterExistsQuery` 和 `InterpreterDropQuery`，等等。复杂的如 `InterpreterSelectQuery`，等等。一个查询执行流水线包含一些区块输入流和区块输出流。例如，透过解释器来解释 `SELECT` 查询会得到用于读取结果的 `IBlockInputStream`，透过解释器解释 `INSERT` 查询会得到用于写结果的 `IBlockOutputStream`；透过解释器解释 `INSERT SELECT` 是一个返回空结果的 `IBlockInputStream`，但它同同时把数据从 `SELECT` 复制到 `INSERT` 里。
 
-`InterpreterSelectQuery` uses `ExpressionAnalyzer` and `ExpressionActions` machinery for query analysis and transformations. This is where most rule-based query optimizations are done. `ExpressionAnalyzer` is quite messy and should be rewritten: various query transformations and optimizations should be extracted to separate classes to allow modular transformations or query.
+`InterpreterSelectQuery `使用了 `ExpressionAnalyzer` 和 `ExpressionActions` 来做查询分析和变换。大多数基于规则的查询优化都在这里进行。`ExpressionAnalyzer` 目前写得比较混乱，亟待重写：很多查询变换和优化都应在重构并提取到另外的类以达到模块化。
 
 ## Functions
 
