@@ -1,15 +1,14 @@
-# Everything you were afraid to ask
+# 想问的一切问题
 
-## Why not use something like MapReduce?
+## 为什么不使用 MapReduce ？
 
-We can refer to systems like map-reduce as distributed computing systems in which the reduce operation is based on distributed sorting. In this sense, they include YAMR, Hadoop, and YT.
+我们可以将 map-reduce 作为一个分布式计算系统，其中的 reduce 操作基于分布式排序。它们包括：YAMR，Hadoop，以及 YT。
 
-These systems aren't appropriate for online queries due to their high latency. In other words, they can't be used as the back-end for a web interface.
-These types of systems aren't useful for real-time data updates.
-Distributed sorting isn't the best way to perform reduce operations if the result of the operation and all the intermediate results (if there are any) are located in the RAM of a single server, which is usually the case for online queries. In such a case, a hash table is the optimal way to perform reduce operations. A common approach to optimizing map-reduce tasks is pre-aggregation (partial reduce) using a hash table in RAM. The user performs this optimization manually.
-Distributed sorting is one of the main causes of reduced performance when running simple map-reduce tasks.
+这类系统由于其高延迟而不适用于在线查询。因而不能作为 Web 界面的后端。
+这些系统不支持对数据进行实时更新。
+如果数据的中间结果可以放在单个节点的 RAM 中，通常在线分析是这样的情况，那么分布式排序并不是最好的方法来进行 reduce 操作。常用的优化 map-reduce 任务的方法是进行预聚合，通过在内存中存储一个哈希表。但这个依赖于用户的手工操作。
+在进行 map-reduce 任务时，分布式排序是降低性能的主要原因之一。
 
-Systems like map-reduce allow executing any code on the cluster. But a declarative query language is better suited to OLAP in order to run experiments quickly. For example, Hadoop has Hive and Pig. Also consider Cloudera Impala, Shark (outdated) for Spark, and Spark SQL, Presto, and Apache Drill. Performance when running such tasks is highly sub-optimal compared to specialized systems, but relatively high latency makes it unrealistic to use these systems as the backend for a web interface.
+诸如 map-reduce 之类的系统允许在集群上执行任何代码。但是为了快速运行实验，声明性查询语言更适合于 OLAP。 例如，Hadoop 有 Hive 和 Pig。 还要考虑 Cloudera Impala，Shark（过时的）Spark，以及 Spark SQL，Presto 和 Apache Drill。 运行此类任务时的性能与专用系统相比非常不理想，但相对较高的延迟使得将这些系统用作 Web 界面的后端并不现实。
 
-YT allows storing groups of columns separately. But YT can't be considered a true column-based system because it doesn't have fixed-length data types (for efficiently storing numbers without extra "garbage"), and also due to its lack of a vector engine. Tasks are performed  in YT using custom code in streaming mode, so they cannot be optimized enough (up to hundreds of millions of rows per second per server). "Dynamic table sorting" is under development in YT using MergeTree, strict value typing, and a query language similar to SQL. Dynamically sorted tables are not appropriate for OLAP tasks because the data is stored by row. The YT query language is still under development, so we can't yet rely on this functionality. YT developers are considering using dynamically sorted tables in OLTP and Key-Value scenarios.
-
+YT 允许分开存储多组列。但是 YT 不能被认为是一个真正的基于列的系统，因为它没有固定长度的数据类型（用于有效地存储数字而没有额外的“垃圾”），并且也由于缺乏向量化引擎。任务在 YT 中使用流模式下的自定义代码执行，因此它们不能被优化（每台服务器每秒高达数亿行）。YT 正在开发 “动态表排序”，使用的是 MergeTree，严格的值类型和类似于SQL的查询语言。 动态排序的表不适用于 OLAP 任务，因为数据按行存储。 YT 查询语言仍在开发中，所以我们不能依赖这个功能。 YT 开发人员正在考虑在 OLTP 和 Key-Value 方案中使用动态分类表。

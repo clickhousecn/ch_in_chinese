@@ -1,62 +1,66 @@
-# Distinctive features of ClickHouse
+# ClickHouse 的独特功能
 
-## True column-oriented DBMS.
+## 真正面向列的数据库管理系统
 
-In a true column-oriented DBMS, there isn't any "garbage" stored with the values. For example, constant-length values must be supported, to avoid storing their length "number" next to the values. As an example, a billion UInt8-type values should actually consume around 1 GB uncompressed, or this will strongly affect the CPU use. It is very important to store data compactly (without any "garbage") even when uncompressed, since the speed of decompression (CPU usage) depends mainly on the volume of uncompressed data.
+在一个真正的面向列的数据库管理系统中，不存在任何与这些值一起存储的“垃圾”。 例如，必须支持恒定长度值，以避免在值旁边存储额外数值表示长度。例如，十亿个 UInt8 类型的值实际上应该消耗大约1 GB 的未压缩数据，否则这将强烈影响 CPU 的使用。 由于解压缩速度（CPU 使用率）主要取决于未压缩数据量，所以即使在未压缩的情况下，紧凑地存储数据也是非常重要的（没有任何“垃圾”）。
 
-This is worth noting because there are systems that can store values of separate columns separately, but that can't effectively process analytical queries due to their optimization for other scenarios. Example are HBase, BigTable, Cassandra, and HyperTable. In these systems, you will get throughput around a hundred thousand rows per second, but not hundreds of millions of rows per second.
+值得注意的是，因为有些系统也可以单独存储单独列的值，但由于针对其他场景作了优化，无法有效处理分析查询。 例如 HBase，BigTable，Cassandra 和 HyperTable。 在这些系统中，每秒钟可以获得大约每秒十万行的吞吐量，但不会到每秒数亿行。
 
-Also note that ClickHouse is a DBMS, not a single database. ClickHouse allows creating tables and databases in runtime, loading data, and running queries without reconfiguring and restarting the server.
+另外请注意，ClickHouse 是一个数据库管理系统，而不是一个单一的数据库。 ClickHouse 允许在运行时创建表和数据库，加载数据并运行查询，而无需重新配置和重新启动服务器。
 
-## Data compression
+## 数据压缩
 
-Some column-oriented DBMSs (InfiniDB CE and MonetDB) do not use data compression. However, data compression really improves performance.
+一些面向列的数据库管理系统（InfiniDB CE 和 MonetDB）不使用数据压缩。但是，数据压缩确实可以提高性能。
 
-## Disk storage of data.
+## 数据存储
 
-Many column-oriented DBMSs (such as SAP HANA and Google PowerDrill) can only work in RAM. But even on thousands of servers, the RAM is too small for storing all the pageviews and sessions in Yandex.Metrica.
+许多列式数据库管理系统（如 SAP HANA 何 Google PowerDrill) 数据只能存储于内存中。但即使在数千台服务器下，内存也不足于存下 Yandex.Metrica 系统中所有的访问数和会话数。
 
-## Parallel processing on multiple cores.
+## 多核并行处理
 
-Large queries are parallelized in a natural way.
+大规模的查询以自然的方式并行化。
 
-## Distributed processing on multiple servers.
+## 多台服务器上分布式处理
 
-Almost none of the columnar DBMSs listed above have support for distributed processing.
-In ClickHouse, data can reside on different shards. Each shard can be a group of replicas that are used for fault tolerance. The query is processed on all the shards in parallel. This is transparent for the user.
+上面列出的列式数据库管理系统几乎都不支持分布式处理。
+在 ClickHouse 中，数据可以驻留在不同的分片上。每个分片可以是用于容错的一组副本。查询在所有碎片上并行处理。 这对用户来说是透明的。
 
-## SQL support
+## SQL 支持
 
-If you are familiar with standard SQL, we can't really talk about SQL support.
-NULL-s are not supported. All the functions have different names.
-However, this is a declarative query language based on SQL that can't be differentiated from SQL in many instances.
-Support for JOINs. Subqueries are supported in FROM, IN, and JOIN clauses, as well as scalar subqueries.
-Dependent subqueries are not supported.
+如果您熟悉标准SQL，那么我们不能说真正支持 SQL。
+不支持 `NULL-s`。所有的函数都有不同的名称。
+但是，这是一种基于 SQL 的声明式查询语言，在很多情况下无法与 SQL 区分开来。
+支持 JOIN。在子查询和纯量子查询中支持 FROM，IN 和 JOIN 子句。
+不支持相关子查询。
 
-## Vector engine
+译注：
+	纯量子查询（scalar subquery）：子查询的结果当做一个列或者一个表达式。
+	相关子查询（dependent subquery）：子查询的值取决于外面的查询。
 
-Data is not only stored by columns, but is processed by vectors – parts of columns. This allows us to achieve high CPU performance.
+## 向量化引擎
 
-## Real-time data updates
+数据不仅仅以列方式存储，也以向量（部分列）的方式进行处理。这使我们能够实现高 CPU 性能。
 
-ClickHouse supports primary key tables. In order to quickly perform queries on the range of the primary key, the data is sorted incrementally using the merge tree. Due to this, data can continually be added to the table. There is no locking when adding data.
+## 实时数据插入
 
-## Indexes
+ClickHouse 支持主键表。 为了快速执行主键范围上的查询，数据使用合并树进行增量排序。 因此，数据可以不断添加到表格中。 添加数据时表没有锁定。
 
-Having a primary key allows, for example, extracting data for specific clients (Metrica counters) for a specific time range, with low latency less than several dozen milliseconds.
+## 索引
 
-## Suitable for online queries
+例如，使用主键可以在特定时间范围内为特定客户端（Metrica counters）提取数据，并且延迟时间少于几十毫秒。
 
-This lets us use the system as the back-end for a web interface. Low latency means queries can be processed without delay, while the Yandex.Metrica interface page is loading. In other words, in online mode.
+## 适合在线查询
 
-## Support for approximated calculations.
+这让我们可以使用该系统作为 Web 界面的后端。低延迟意味着在 Yandex.Metrica 界面加载的过程中可以不拖延地处理查询，换而言之，可以在线查询。
 
-1. The system contains aggregate functions for approximated calculation of the number of various values, medians, and quantiles.
-2. Supports running a query based on a part (sample) of data and getting an approximated result. In this case, proportionally less data is retrieved from the disk.
-3. Supports running an aggregation for a limited number of random keys, instead of for all keys. Under certain conditions for key distribution in the data, this provides a reasonably accurate result while using fewer resources.
+## 支持近似计算
 
-## Data replication and support for data integrity on replicas
+1. 系统包含用于近似计算各种值，中位数和分位数的集合函数。
+2. 支持基于部分（抽样）数据运行查询并获得近似结果。在这种情况下，较少的数据从磁盘中检索。
+3. 支持为有限数量的随机数值（而不是所有数值）运行聚合。 在数据中分发的特定条件下，这提供了相对准确的结果，同时也使用更少的资源。
 
-Uses asynchronous multimaster replication. After being written to any available replica, data is distributed to all the remaining replicas. The system maintains identical data on different replicas. Data is restored automatically after a failure, or using a "button" for complex cases.
-For more information, see the section [Data replication](../table_engines/replication.md#table_engines-replication).
+## 数据副本并支持副本数据的完整性
+
+使用异步多主复制。 写入任何可用的副本后，数据将分发到所有剩余的副本。 系统在不同的副本上保存相同的数据。 数据在失败后自动恢复，或对复杂情况使用“按钮”。
+更多关于副本的信息，参考 [数据副本](../table_engines/replication.md#table_engines-replication)。
 

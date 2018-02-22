@@ -1,6 +1,6 @@
-# ClickHouse features that can be considered disadvantages
+# ClickHouse 的缺点
 
-1. No transactions.
-2. For aggregation, query results must fit in the RAM on a single server. However, the volume of source data for a query may be indefinitely large.
-3. Lack of full-fledged UPDATE/DELETE implementation.
+1. 不支持事务。
+2. 对于聚合，查询结果必须可以在单个服务器上的 RAM 中存下。但是，查询的源数据量可能无限大。
+3. 缺乏完整的 UPDATE / DELETE 实现。
 

@@ -1,47 +1,46 @@
-# The Yandex.Metrica task
+# Yandex.Metrica 项目
 
-ClickHouse currently powers [ Yandex.Metrica](https://metrika.yandex.ru/), [ the second largest platform in the world](http://w3techs.com/technologies/overview/traffic_analysis/all) for Web Analytics. With more than 13 trillion records in the database and more than 20 billion events daily, ClickHouse allows you generating custom reports on the fly directly from non-aggregated data.
+ClickHouse 目前服务于网站分析平台 [Yandex.Metrica](https://metrika.yandex.ru/), [世界上第二大网站分析平台](http://w3techs.com/technologies/overview/traffic_analysis/all)。 凭借数据库中超过13万亿条记录和每天超过200亿条事件数，ClickHouse 允许您直接从非汇总数据中直接生成定制的报告。
 
-We need to get custom reports based on hits and sessions, with custom segments set by the user. Data for the reports is updated in real-time. Queries must be run immediately (in online mode). We must be able to build reports for any time period. Complex aggregates must be calculated, such as the number of unique visitors.
-At this time (April 2014), Yandex.Metrica receives approximately 12 billion events (pageviews and mouse clicks) daily. All these events must be stored in order to build custom reports. A single query may require scanning hundreds of millions of rows over a few seconds, or millions of rows in no more than a few hundred milliseconds.
+我们需要根据点击和会话获取自定义报告，并使用由用户设置的自定义细分维度。报告的数据是实时更新的。 查询必须立即运行（在线模式）。 我们必须能够在任何时间范围内建立报告。必须支持复杂的聚合计算，例如唯一访客量。
+目前（2014年4月），Yandex.Metrica 每天接收约120亿次事件（浏览量和鼠标点击事件）。 所有这些事件都必须存储以建立自定义报告。单个查询可能需要几秒钟扫描数亿行，或者不超过几百毫秒扫描数百万行。
 
-## Usage in Yandex.Metrica and other Yandex services
+## 在 Yandex.Metrica 和其他 Yandex 服务中的使用方法
 
-ClickHouse is used for multiple purposes in Yandex.Metrica.
-Its main task is to build reports in online mode using non-aggregated data. It uses a cluster of 374 servers, which store over 20.3 trillion rows in the database. The volume of compressed data, without counting duplication and replication, is about 2 PB. The volume of uncompressed data (in TSV format) would be approximately 17 PB.
+ClickHouse 在 Yandex.Metrica 中用于多种用途。
+其主要任务是使用非聚合数据以联机模式构建报告。 它使用374台服务器的集群，在数据库中存储20.3万亿行。 压缩数据量不计复制和复制，大约为2 PB。 未压缩数据量（采用TSV格式）大约为17PB。
 
-ClickHouse is also used for:
+ClickHouse 同样用于:
 
-- Storing data for Session Replay from Yandex.Metrica.
-- Processing intermediate data.
-- Building global reports with Analytics.
-- Running queries for debugging the Yandex.Metrica engine.
-- Analyzing logs from the API and the user interface.
+- 在 Yandex.Metrica 中存储会话重播数据。
+- 处理中间数据。
+- 构建全球化的分析报告。
+- 运行查询来调试 Yandex.Metrica 引擎。
+- 分析来自于 API 或者用户接口请求的日志。
 
-ClickHouse has at least a dozen installations in other Yandex services: in search verticals, Market, Direct, business analytics, mobile development, AdFox, personal services, and others.
+ClickHouse 在其他 Yandex 服务中至少安装了十几个安装：搜索行业，市场，Direct，业务分析，移动开发，AdFox，个人服务等。
 
-## Aggregated and non-aggregated data
+## 聚合和非聚合数据
 
-There is a popular opinion that in order to effectively calculate statistics, you must aggregate data, since this reduces the volume of data.
+有一种流行的观点认为，为了有效地计算统计数据，您必须汇总数据，因为这会减少数据量。
+但是数据聚合是一种非常局限的解决方法，因为以下原因：
 
-But data aggregation is a very limited solution, for the following reasons:
+- 您必须具有用户需要的预先定义的报告列表。
+- 用户不能自定义报告。
+- 聚合大量值时，数据量不会减小，聚合用处不大。
+- 对于大量的报告，聚合变化太多（组合爆炸）。
+- 聚合高基数值（如URL）时，数据量不会减少太多（小于两倍）。
+- 出于这个原因，具有聚合的数据量可能会增加而不是缩小。
+- 用户不会查看我们为他们生成的所有报告。大部分聚合计算都是无用的。
+- 各种聚合可能违反数据的逻辑完整性。
 
-- You must have a pre-defined list of reports the user will need.
-- The user can't make custom reports.
-- When aggregating a large quantity of keys, the volume of data is not reduced, and aggregation is useless.
-- For a large number of reports, there are too many aggregation variations (combinatorial explosion).
-- When aggregating keys with high cardinality (such as URLs), the volume of data is not reduced by much (less than twofold).
-- For this reason, the volume of data with aggregation might grow instead of shrink.
-- Users do not view all the reports we generate for them. A large portion of calculations are useless.
-- The logical integrity of data may be violated for various aggregations.
+如果我们不汇总任何内容并使用非汇总数据，这可能实际上会减少计算量。
 
-If we do not aggregate anything and work with non-aggregated data, this might actually reduce the volume of calculations.
+但是，通过聚合，相当一部分工作会离线并相对平静地完成。相反，在线计算需要尽可能快地计算，因为用户正在等待结果。
 
-However, with aggregation, a significant part of the work is taken offline and completed relatively calmly. In contrast, online calculations require calculating as fast as possible, since the user is waiting for the result.
+Yandex.Metrica 有一个专门用于聚合数据查询的系统，称为 Metrage，用于大多数报告。
+从2009年开始，Yandex.Metrica 还使用专门的 OLAP 数据库处理非聚合数据，称为 OLAPServer，该数据以前用于报告生成器。
+OLAPServer 对非聚合数据运行良好，但它有许多限制，无法根据需要将其用于所有报告。 其中包括缺乏对其他数据类型（仅数字）的支持，以及无法实时增量更新数据（只能通过每天重写数据来完成）。 OLAPServer 不是一个数据库管理系统，而是一个专门的数据库。
 
-Yandex.Metrica has a specialized system for aggregating data called Metrage, which is used for the majority of reports.
-Starting in 2009, Yandex.Metrica also used a specialized OLAP database for non-aggregated data called OLAPServer, which was previously used for the report builder.
-OLAPServer worked well for non-aggregated data, but it had many restrictions that did not allow it to be used for all reports as desired. These included the lack of support for data types (only numbers), and the inability to incrementally update data in real-time (it could only be done by rewriting data daily). OLAPServer is not a DBMS, but a specialized DB.
-
-To remove the limitations of OLAPServer and solve the problem of working with non-aggregated data for all reports, we developed the ClickHouse DBMS.
+为了消除 OLAPServer 的限制并解决所有报告使用非汇总数据的问题，我们开发了 ClickHouse 数据库管理系统。
 
