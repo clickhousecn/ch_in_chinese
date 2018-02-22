@@ -127,15 +127,15 @@ ClickHouse 使用强类型，所以隐式类型转换不会发生。如果函数
 >
 > 由于我们使用了向量化查询执行，所有的函数并不会执行短路逻辑。举个例子，如果你写 `WHERE f(x) AND g(y)`，`f(x)` 和 `g(x)` 都会被计算，哪怕 `f(x)` 值为零的行（当 `f(x)` 是常数零食除外）。但如果 `f(x)` 可以去掉很多行，而且算 `f(x)` 需要的资源远少于 `g(y)`，实现一个多程计算的效果会更好：先算 `f(x)`，然后过滤不符合的列，然后才对剩下的少量数据计算 `g(y)`。
 
-## Aggregate Functions
+## 聚合函数Aggregate Functions
 
-Aggregate functions are stateful functions. They accumulate passed values into some state, and allow you to get results from that state. They are managed with the `IAggregateFunction` interface. States can be rather simple (the state for `AggregateFunctionCount` is just a single `UInt64` value) or quite complex (the state of `AggregateFunctionUniqCombined` is a combination of a linear array, a hash table and a `HyperLogLog` probabilistic data structure).
+聚合函数都使用状态。它们将传过来的值汇总成一些状态，然后让你从那些状态里拿到你要的结果。它们可以用 `IAggregateFunction` 接口管理。状态可以很简单（`AggregateFunctionCount` 只包含一个 `UInt64` 值）或者很复杂（`AggregateFunctionUniqCombined` 包括一个一维数组，一个哈希表和一个 `HyperLogLog` 概率数据结构）。
 
-To deal with multiple states while executing a high-cardinality `GROUP BY` query, states are allocated in `Arena` (a memory pool), or they could be allocated in any suitable piece of memory. States can have a non-trivial constructor and destructor: for example, complex aggregation states can allocate additional memory themselves. This requires some attention to creating and destroying states and properly passing their ownership, to keep track of who and when will destroy states.
+当执行多层 `GROUP BY` 查询碰到需要处理多个状态的时候，状态储存在 `Arena` 里（一个内存池），或者在内存的其它合适的地方。状态可能有一个复杂的构造函数和析构函数————比如说，复杂的聚合状态可以自行安排占用更多的内存。这需要更仔细地创建和销毁状态，以及合理地传递状态的拥有权，并记录好谁什么时候要销毁这些状态。
 
-Aggregation states can be serialized and deserialized to pass over the network during distributed query execution or to write them on disk where there is not enough RAM. They can even be stored in a table with the `DataTypeAggregateFunction` to allow incremental aggregation of data.
+当使用分布式查询需要在网络上传输，或者由于内存不足需要写到硬盘上时，聚合状态可以被序列化或者反序列化。聚合状态甚至可以用 `DataTypeAggregateFunction` 存在表中以便增量存储聚合数据。
 
-> The serialized data format for aggregate function states is not versioned right now. This is ok if aggregate states are only stored temporarily. But we have the `AggregatingMergeTree` table engine for incremental aggregation, and people are already using it in production. This is why we should add support for backward compatibility when changing the serialized format for any aggregate function in the future.
+> 聚合状态的序列化数据格式目前并没有保存版本号。如果这些数据只是暂时地保存的话，这种做法没有问题。但是我们有 `AggregatingMergeTree` 表引擎用于增量聚合，而且已经有人在生产环境使用了。所以以后我们如果要更改任何聚合函数的序列化格式，我们需要为其兼容以前的功能。
 
 ## Server
 
