@@ -1,89 +1,89 @@
-# Operators
+# 运算符
 
-All operators are transformed to the corresponding functions at the query parsing stage, in accordance with their precedence and associativity.
-Groups of operators are listed in order of priority (the higher it is in the list, the earlier the operator is connected to its arguments).
+根据它们的优先级和相关性，所有运算符都将在查询解析阶段转换为相应的函数。
+按照它们的优先级来排列运算符组合（在列表中的位置越高，运算符越早连接到它的参数）。
 
-## Access operators
+## 访问运算符
 
-`a[N]`  Access to an element of an array; ` arrayElement(a, N) function`.
+`a[N]`	： 访问数组中的一个元素； `arrayElement(a, N)` 函数
 
-`a.N` – Access to a tuble element; `tupleElement(a, N)` function.
+`a.N`	： 访问元组中的一个元素； `tupleElement(a, N)` 函数
 
-## Numeric negation operator
+## 数值否定运算符
 
-`-a`  – The `negate (a)` function.
+`-a` 	：  `negate (a)` 函数
 
-## Multiplication and division operators
+## 乘法除法运算符
 
-`a * b`  – The `multiply (a, b) function.`
+`a * b` 	：  `multiply (a, b) ` 函数
 
-`a / b`  – The ` divide(a, b) function.`
+`a / b` 	：  `divide(a, b) ` 函数
 
-`a % b` – The `modulo(a, b) function.`
+`a % b`	：  `modulo(a, b) ` 函数
 
-## Addition and subtraction operators
+## 加法减法运算符
 
-`a + b` – The `plus(a, b) function.`
+`a + b`	：  `plus(a, b) ` 函数
 
-`a - b`  – The `minus(a, b) function.`
+`a - b` 	：  `minus(a, b) ` 函数
 
-## Comparison operators
+## 比较运算符
 
-`a = b` – The `equals(a, b) function.`
+`a = b`	：  `equals(a, b) ` 函数
 
-`a == b` – The ` equals(a, b) function.`
+`a == b`	：  ` equals(a, b) ` 函数
 
-`a != b` – The `notEquals(a, b) function.`
+`a != b`	：  `notEquals(a, b) ` 函数
 
-`a <> b` – The `notEquals(a, b) function.`
+`a <> b`	：  `notEquals(a, b) ` 函数
 
-`a <= b` – The `lessOrEquals(a, b) function.`
+`a <= b`	：  `lessOrEquals(a, b) ` 函数
 
-`a >= b` – The `greaterOrEquals(a, b) function.`
+`a >= b`	：  `greaterOrEquals(a, b) ` 函数
 
-`a < b` – The `less(a, b) function.`
+`a < b`	：  `less(a, b) ` 函数
 
-`a > b` – The `greater(a, b) function.`
+`a > b`	：  `greater(a, b) ` 函数
 
-`a LIKE s` – The `like(a, b) function.`
+`a LIKE s`	：  `like(a, b) ` 函数
 
-`a NOT LIKE s` – The `notLike(a, b) function.`
+`a NOT LIKE s`	：  `notLike(a, b) ` 函数
 
-`a BETWEEN b AND c` – The same as `a >= b AND a <= c.`
+`a BETWEEN b AND c`	：  与 `a >= b AND a <= c` 一样
 
-## Operators for working with data sets
+## 数据集中的运算符
 
-*See the section "IN operators".*
+*参考 "IN operators"*
 
-`a IN ...` – The `in(a, b) function`
+`a IN ...`	：  `in(a, b)` 函数
 
-`a NOT IN ...` – The `notIn(a, b) function.`
+`a NOT IN ...`	：  `notIn(a, b) ` 函数
 
-`a GLOBAL IN ...` – The `globalIn(a, b) function.`
+`a GLOBAL IN ...`	：  `globalIn(a, b) ` 函数
 
-`a GLOBAL NOT IN ...` – The `globalNotIn(a, b) function.`
+`a GLOBAL NOT IN ...`	：  `globalNotIn(a, b) ` 函数
 
-## Logical negation operator
+## 逻辑否定运算符
 
-`NOT a` The `not(a) function.`
+`NOT a`  `not(a) ` 函数
 
-## Logical "AND" operator.
+## 逻辑 "AND" 运算符
 
-`a AND b` – The`and(a, b) function.`
+`a AND b`	： `and(a, b) ` 函数
 
-## Logical "OR" operator.
+## 逻辑 "OR" 运算符
 
-`a OR b` – The `or(a, b) function.`
+`a OR b`	：  `or(a, b) ` 函数
 
-## Conditional operator
+## 条件运算符
 
-`a ? b : c` – The `if(a, b, c) function.`
+`a ? b : c`	：  `if(a, b, c) ` 函数
 
-Note:
+注意:
 
-The conditional operator calculates the values of b and c, then checks whether condition a is met, and then returns the corresponding value. If "b" or "c" is an arrayJoin() function, each row will be replicated regardless of the "a" condition.
+条件运算符计算 b 和 c 的值，n 满足条件 a，n 返回相应的值。但如果 b 或 c 是一个 `arrayJoin()` 函数，则无论 a 条件如何，每行都将被复制。
 
-## Conditional expression
+## 条件表达式
 
 ```sql
 CASE [x]
@@ -93,30 +93,29 @@ CASE [x]
 END
 ```
 
-If "x" is specified, then transform(x, \[a, ...\], \[b, ...\], c). Otherwise – multiIf(a, b, ..., c).
+如果 `x` 满足条件， 执行 (x, \[a, ...\], \[b, ...\], c)，否则执行`multiIf(a, b, ..., c)`。
 
-## Concatenation operator
+## 连接运算符
 
-`s1 || s2` – The `concat(s1, s2) function.`
+`s1 || s2`	：  `concat(s1, s2) ` 函数
 
-## Lambda creation operator
+## Lambda 表达式
 
-`x -> expr` – The `lambda(x, expr) function.`
+`x -> expr`	：  `lambda(x, expr) ` 函数
 
-The following operators do not have a priority, since they are brackets:
+以下运算符没有优先级，因为 y 是括号：
 
-## Array creation operator
+## 创建数组运算符
 
-`[x1, ...]` – The `array(x1, ...) function.`
+`[x1, ...]`	：  `array(x1, ...) ` 函数
 
-## Tuple creation operator
+## 创建元组运算符
 
-`(x1, x2, ...)` – The `tuple(x2, x2, ...) function.`
+`(x1, x2, ...)`	：  `tuple(x2, x2, ...) ` 函数
 
-## Associativity
+## 相关性
 
-All binary operators have left associativity. For example, `1 + 2 + 3` is transformed to `plus(plus(1, 2), 3)`.
-Sometimes this doesn't work the way you expect. For example, ` SELECT 4 > 2 > 3`  will result in 0.
+所有的二元运算符都具有相关性。 例如，`1 + 2 + 3`被转换为`plus(plus(1, 2), 3)`。
+有时候这不按期望执行。例如，` SELECT 4 > 2 > 3`将返回结果0。
 
-For efficiency, the `and` and `or` functions accept any number of arguments. The corresponding chains of `AND` and `OR` operators are transformed to a single call of these functions.
-
+为了提高效率，`and` 和 `or` 函数接受任意数量的参数。`AND` 和 `OR` 运算符的相应变换为对应函数的调用。
