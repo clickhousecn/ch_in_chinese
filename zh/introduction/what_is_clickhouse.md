@@ -1,6 +1,6 @@
 # ClickHouse 介绍
 
-ClickHouse 是一个专注于 OLAP 查询的列式数据库管理系统（）。
+ClickHouse 是一个专注于 OLAP 查询的列式数据库管理系统。
 
 在一般的行式数据库中，数据是这样存储的：
 
@@ -26,7 +26,7 @@ EventTime:  2016-05-18 05:19:20     2016-05-18 08:10:20     2016-05-18 07:38:00 
 以上示例仅显示了数据的排列方式。
 不同列的数据是分开存储的，同一列的数据存储在一起。
 
-列式数据库有： `Vertica`， `Paraccel (Actian Matrix) (Amazon Redshift)`， `Sybase IQ`， `Exasol`， `Infobright`， `InfiniDB`， `MonetDB (VectorWise) (Actian Vector)`， `LucidDB`， `SAP HANA`， `Google Dremel`， `Google PowerDrill`， `Druid`， `kdb+`， and so on.
+列式数据库有： `Vertica`， `Paraccel (Actian Matrix) (Amazon Redshift)`， `Sybase IQ`， `Exasol`， `Infobright`， `InfiniDB`， `MonetDB (VectorWise) (Actian Vector)`， `LucidDB`， `SAP HANA`， `Google Dremel`， `Google PowerDrill`， `Druid`， `kdb+` 等等。
 
 不同的数据存储顺序适用于不同的应用场景。
 数据的访问场景指的是：数据的查询方式，查询频率，每次查询的数据量大小（行数，列数，字节数）；数据查询和更新的关系；数据总量大小以及数据在本地磁盘占用情况；是否使用事物，数据的隔离性；是否需要数据副本和数据完整性；每类查询的延迟和吞吐量要求等等。
@@ -109,7 +109,7 @@ LIMIT 20
 2. CPU 上的优化。
 
 
-由于执行查询需要处理大量的行，因此它有助于为整个向量而不是单独的行调度所有操作，或者实现一个查询引擎使其几乎不需要调度成本。 如果你不这样做，对于任何半象限的磁盘子系统，查询解释器不可避免地会停止 CPU。
+由于执行查询需要处理大量的行，因此它有助于为整个向量而不是单独的行调度所有操作，或者实现一个查询引擎使其几乎不需要调度成本。 如果你不这样做，对于质量一般般的磁盘子系统，查询解释器将不可避免地拖低 CPU 的效率。
 
 这里有两种实现方式：
 
