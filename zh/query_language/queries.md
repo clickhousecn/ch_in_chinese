@@ -16,7 +16,7 @@ CREATE DATABASE [IF NOT EXISTS] db_name
 `CREATE TABLE` 查询有多种形式。
 
 ```sql
-CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db。]name [ON CLUSTER cluster]
+CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name [ON CLUSTER cluster]
 (
     name1 [type1] [DEFAULT|MATERIALIZED|ALIAS expr1]，
     name2 [type2] [DEFAULT|MATERIALIZED|ALIAS expr2]，
@@ -31,13 +31,13 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db。]name [ON CLUSTER cluster]
 表达式也可以定义为默认值。
 
 ```sql
-CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db。]name AS [db2。]name2 [ENGINE = engine]
+CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name AS [db2.]name2 [ENGINE = engine]
 ```
 
 用另外一个表的结构创建表。 你能够为表指定不同的引擎。 如果引擎没有被指定， 相同的引擎将被应用于 `db2。name2` 表。
 
 ```sql
-CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db。]name ENGINE = engine AS SELECT 。。。
+CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name ENGINE = engine AS SELECT ...
 ```
 
 创建一个带有`SELECT`查询结果类似结构的表， 带有 'engine' 引擎， 同时从SELECT中添加数据。
@@ -98,7 +98,7 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db。]name ENGINE = engine AS SELECT �
 例如， 如下的查询创建了 `all_hits` `Distributed` 表， 在每个主机中的 `cluster`:
 
 ```sql
-CREATE TABLE IF NOT EXISTS all_hits ON CLUSTER cluster (p Date， i Int32) ENGINE = Distributed(cluster， default， hits)
+CREATE TABLE IF NOT EXISTS all_hits ON CLUSTER cluster (p Date, i Int32) ENGINE = Distributed(cluster, default, hits)
 ```
 
 为了正确地运行这些查询， 每个主机必须有相同的集群定义 (为了简化同步配置， 你能够从ZooKeeper进行订阅)。 他们也必须连接到ZooKeeper 服务器上。
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS all_hits ON CLUSTER cluster (p Date， i Int32) ENGIN
 ## CREATE VIEW
 
 ```sql
-CREATE [MATERIALIZED] VIEW [IF NOT EXISTS] [db。]name [TO[db。]name] [ENGINE = engine] [POPULATE] AS SELECT 。。。
+CREATE [MATERIALIZED] VIEW [IF NOT EXISTS] [db.]name [TO[db.]name] [ENGINE = engine] [POPULATE] AS SELECT ...
 ```
 
 创建一个视图。 有2中类型的视图: Normal 和 MATERIALIZED。
@@ -122,19 +122,19 @@ Normal视图不存储任何数据， 但是从另外一个表中执行一个读�
 作为一个示例， 假设你已经创建了一个视图:
 
 ```sql
-CREATE VIEW view AS SELECT 。。。
+CREATE VIEW view AS SELECT ...
 ```
 
 同时写到一个查询中:
 
 ```sql
-SELECT a， b， c FROM view
+SELECT a, b, c FROM view
 ```
 
 此查询最终与使用子查询等价:
 
 ```sql
-SELECT a， b， c FROM (SELECT 。。。)
+SELECT a, b, c FROM (SELECT ...)
 ```
 
 物化视图保存数据通过对应的SELECT查询来转换。
@@ -143,11 +143,11 @@ SELECT a， b， c FROM (SELECT 。。。)
 
 一个物化视图被安排如下: 当插入数据到指定SELECT的表中时， 插入数据的部分通过SELECT查询来转化， 同时结果被插入到视图中。
 
-如果你指定了POPULATE， 当它创建时， 现有的表数据被插入到视图中， 好像进行了一个 `CREATE TABLE 。。。 AS SELECT 。。。` 。 否则， 在创建视图之后， 此查询仅包含插入在表中的数据。 我们不推荐使用 POPULATE， 在创建视图过程中插入到表中的数据不插入到视图中。
+如果你指定了POPULATE， 当它创建时， 现有的表数据被插入到视图中， 好像进行了一个 `CREATE TABLE ... AS SELECT ...` 。 否则， 在创建视图之后， 此查询仅包含插入在表中的数据。 我们不推荐使用 POPULATE， 在创建视图过程中插入到表中的数据不插入到视图中。
 
-一个 `SELECT` 查询能够包含 `DISTINCT`， `GROUP BY`， `ORDER BY`， `LIMIT`。。。 注意: 对应的转换独立地在每个插入数据的数据块中执行。 例如， 如果 `GROUP BY` 被设置， 数据在插入时就进行聚合， 但是仅在单个插入的数据包中。 数据并不进一步聚合。 此异常是当使用一个ENGINE引擎时， 独立运行数据聚合， 例如 `SummingMergeTree`。
+一个 `SELECT` 查询能够包含 `DISTINCT`, `GROUP BY`, `ORDER BY`, `LIMIT`... 注意: 对应的转换独立地在每个插入数据的数据块中执行。 例如， 如果 `GROUP BY` 被设置， 数据在插入时就进行聚合， 但是仅在单个插入的数据包中。 数据并不进一步聚合。 此异常是当使用一个ENGINE引擎时， 独立运行数据聚合， 例如 `SummingMergeTree`。
 
-在物化视图的 `ALTER` 查询执行上正在开发中， 因此他们使用上不是特别方便。 如果物化视图使用结构 ``TO [db。]name``， 你能够 ``DETACH`` 此视图， 在目标表中运行 ``ALTER``， 然后 ``ATTACH`` 之前卸载的 (``DETACH``) 视图。
+在物化视图的 `ALTER` 查询执行上正在开发中， 因此他们使用上不是特别方便。 如果物化视图使用结构 ``TO [db.]name``， 你能够 ``DETACH`` 此视图， 在目标表中运行 ``ALTER``， 然后 ``ATTACH`` 之前卸载的 (``DETACH``) 视图。
 
 视图看起来与正常表一样。 例如， 他们以`SHOW TABLES`查询的结果被列出。
 
@@ -164,7 +164,7 @@ SELECT a， b， c FROM (SELECT 。。。)
 如果表在之前执行了`DETACH`， 这意味着此结构是已知的， 你能够使用没有定义结构的简写。
 
 ```sql
-ATTACH TABLE [IF NOT EXISTS] [db。]name
+ATTACH TABLE [IF NOT EXISTS] [db.]name
 ```
 
 此查询在启动服务器时被执行。 服务器保存了表的元数据作为带有`ATTACH`查询的文件， 它直接运行在启动时(在服务器上创建)。
@@ -181,7 +181,7 @@ DROP DATABASE [IF EXISTS] db [ON CLUSTER cluster]
 如果 `IF EXISTS` 被指定， 如果此数据库不存在， 它不返回错误。
 
 ```sql
-DROP TABLE [IF EXISTS] [db。]name [ON CLUSTER cluster]
+DROP TABLE [IF EXISTS] [db.]name [ON CLUSTER cluster]
 ```
 
 删除此表。
@@ -192,7 +192,7 @@ DROP TABLE [IF EXISTS] [db。]name [ON CLUSTER cluster]
 删除服务器中有关'name' 表中的信息。 然后服务器不知道有此表的存在。
 
 ```sql
-DETACH TABLE [IF EXISTS] [db。]name
+DETACH TABLE [IF EXISTS] [db.]name
 ```
 
 它不删除表的数据或元数据。 在下一次服务器启动时， 服务器将读取元数据， 再次找到此表。
@@ -205,7 +205,7 @@ DETACH TABLE [IF EXISTS] [db。]name
 重命名一个或多个表。
 
 ```sql
-RENAME TABLE [db11。]name11 TO [db12。]name12， [db21。]name21 TO [db22。]name22， 。。。 [ON CLUSTER cluster]
+RENAME TABLE [db11.]name11 TO [db12.]name12, [db21.]name21 TO [db22.]name22, ... [ON CLUSTER cluster]
 ```
 
 所有的表都在全局锁下进行重命名。 重命名表是一个轻操作。 如果你在TO之后提示另外一个数据库， 此表将移动到此数据库中。 然而， 带有数据库的目录必须在相同的文件系统内 (否则， 将发生错误)。
@@ -221,7 +221,7 @@ RENAME TABLE [db11。]name11 TO [db12。]name12， [db21。]name21 TO [db22。]n
 更新表结构。
 
 ```sql
-ALTER TABLE [db]。name [ON CLUSTER cluster] ADD|DROP|MODIFY COLUMN 。。。
+ALTER TABLE [db].name [ON CLUSTER cluster] ADD|DROP|MODIFY COLUMN ...
 ```
 
 在查询中， 指定一个或多个逗号分隔动作的列表。
@@ -299,7 +299,7 @@ A "part" in the table is part of the data from a single partition， sorted by t
 You can use the `system。parts` table to view the set of table parts and partitions:
 
 ```sql
-SELECT * FROM system。parts WHERE active
+SELECT * FROM system.parts WHERE active
 ```
 
 `active` – Only count active parts。 Inactive parts are， for example， source parts remaining after merging to a larger part – these parts are deleted approximately 10 minutes after merging。
@@ -337,7 +337,7 @@ For replicated tables， the set of parts can't be changed in any case。
 The `detached` directory contains parts that are not used by the server - detached from the table using the `ALTER 。。。 DETACH` query。 Parts that are damaged are also moved to this directory， instead of deleting them。 You can add， delete， or modify the data in the 'detached' directory at any time – the server won't know about this until you make the `ALTER TABLE 。。。 ATTACH` query。
 
 ```sql
-ALTER TABLE [db。]table DETACH PARTITION 'name'
+ALTER TABLE [db.]table DETACH PARTITION 'name'
 ```
 
 Move all data for partitions named 'name' to the 'detached' directory and forget about them。
@@ -348,13 +348,13 @@ After the query is executed， you can do whatever you want with the data in the
 The query is replicated – data will be moved to the 'detached' directory and forgotten on all replicas。 The query can only be sent to a leader replica。 To find out if a replica is a leader， perform SELECT to the 'system。replicas' system table。 Alternatively， it is easier to make a query on all replicas， and all except one will throw an exception。
 
 ```sql
-ALTER TABLE [db。]table DROP PARTITION 'name'
+ALTER TABLE [db.]table DROP PARTITION 'name'
 ```
 
 The same as the `DETACH` operation。 Deletes data from the table。 Data parts will be tagged as inactive and will be completely deleted in approximately 10 minutes。 The query is replicated – data will be deleted on all replicas。
 
 ```sql
-ALTER TABLE [db。]table ATTACH PARTITION|PART 'name'
+ALTER TABLE [db.]table ATTACH PARTITION|PART 'name'
 ```
 
 Adds data to the table from the 'detached' directory。
@@ -366,7 +366,7 @@ The query is replicated。 Each replica checks whether there is data in the 'det
 So you can put data in the 'detached' directory on one replica， and use the ALTER 。。。 ATTACH query to add it to the table on all replicas。
 
 ```sql
-ALTER TABLE [db。]table FREEZE PARTITION 'name'
+ALTER TABLE [db.]table FREEZE PARTITION 'name'
 ```
 
 Creates a local backup of one or multiple partitions。 The name can be the full name of the partition (for example， 201403)， or its prefix (for example， 2014): then the backup will be created for all the corresponding partitions。
@@ -384,12 +384,12 @@ The backup is created almost instantly (but first it waits for current queries t
 After creating the backup， data from `/var/lib/clickhouse/shadow/` can be copied to the remote server and then deleted on the local server。
 The entire backup process is performed without stopping the server。
 
-The `ALTER 。。。 FREEZE PARTITION` query is not replicated。 A local backup is only created on the local server。
+The `ALTER ... FREEZE PARTITION` query is not replicated。 A local backup is only created on the local server。
 
 As an alternative， you can manually copy data from the `/var/lib/clickhouse/data/database/table` directory。
 But if you do this while the server is running， race conditions are possible when copying directories with files being added or changed， and the backup may be inconsistent。 You can do this if the server isn't running – then the resulting data will be the same as after the `ALTER TABLE t FREEZE PARTITION` query。
 
-`ALTER TABLE 。。。 FREEZE PARTITION` only copies data， not table metadata。 To make a backup of table metadata， copy the file  `/var/lib/clickhouse/metadata/database/table。sql`
+`ALTER TABLE ... FREEZE PARTITION` only copies data， not table metadata。 To make a backup of table metadata， copy the file  `/var/lib/clickhouse/metadata/database/table。sql`
 
 To restore from a backup:
 
@@ -410,7 +410,7 @@ Backups protect against human error (accidentally deleting data， deleting the 
 For high-volume databases， it can be difficult to copy backups to remote servers。 In such cases， to protect from human error， you can keep a backup on the same server (it will reside in `/var/lib/clickhouse/shadow/`)。
 
 ```sql
-ALTER TABLE [db。]table FETCH PARTITION 'name' FROM 'path-in-zookeeper'
+ALTER TABLE [db.]table FETCH PARTITION 'name' FROM 'path-in-zookeeper'
 ```
 
 This query only works for replicatable tables。
@@ -424,13 +424,13 @@ Data is placed in the `detached` directory。 You can use the `ALTER TABLE 。�
 The ` FROM`  clause specifies the path in ` ZooKeeper`。 For example， `/clickhouse/tables/01-01/visits`。
 Before downloading， the system checks that the partition exists and the table structure matches。 The most appropriate replica is selected automatically from the healthy replicas。
 
-The `ALTER 。。。 FETCH PARTITION` query is not replicated。 The partition will be downloaded to the 'detached' directory only on the local server。 Note that if after this you use the `ALTER TABLE 。。。 ATTACH` query to add data to the table， the data will be added on all replicas (on one of the replicas it will be added from the 'detached' directory， and on the rest it will be loaded from neighboring replicas)。
+The `ALTER ... FETCH PARTITION` query is not replicated。 The partition will be downloaded to the 'detached' directory only on the local server。 Note that if after this you use the `ALTER TABLE ... ATTACH` query to add data to the table， the data will be added on all replicas (on one of the replicas it will be added from the 'detached' directory， and on the rest it will be loaded from neighboring replicas)。
 
 ### Synchronicity of ALTER queries
 
 For non-replicatable tables， all `ALTER` queries are performed synchronously。 For replicatable tables， the query just adds instructions for the appropriate actions to `ZooKeeper`， and the actions themselves are performed as soon as possible。 However， the query can wait for these actions to be completed on all the replicas。
 
-For `ALTER 。。。 ATTACH|DETACH|DROP` queries， you can use the `replication_alter_partitions_sync` setting to set up waiting。
+For `ALTER ... ATTACH|DETACH|DROP` queries， you can use the `replication_alter_partitions_sync` setting to set up waiting。
 Possible values: `0` – do not wait; `1` – only wait for own execution (default); `2` – wait for all。
 
 <a name="query_language_queries_show_databases"></a>
@@ -496,7 +496,7 @@ watch -n1 "clickhouse-client --query='SHOW PROCESSLIST'"
 ## SHOW CREATE TABLE
 
 ```sql
-SHOW CREATE TABLE [db。]table [INTO OUTFILE filename] [FORMAT format]
+SHOW CREATE TABLE [db.]table [INTO OUTFILE filename] [FORMAT format]
 ```
 
 Returns a single `String`-type 'statement' column， which contains a single value – the `CREATE` query used for creating the specified table。
@@ -504,7 +504,7 @@ Returns a single `String`-type 'statement' column， which contains a single val
 ## DESCRIBE TABLE
 
 ```sql
-DESC|DESCRIBE TABLE [db。]table [INTO OUTFILE filename] [FORMAT format]
+DESC|DESCRIBE TABLE [db.]table [INTO OUTFILE filename] [FORMAT format]
 ```
 
 Returns two `String`-type columns: `name` and `type`， which indicate the names and types of columns in the specified table。
@@ -514,7 +514,7 @@ Nested data structures are output in "expanded" format。 Each column is shown s
 ## EXISTS
 
 ```sql
-EXISTS TABLE [db。]name [INTO OUTFILE filename] [FORMAT format]
+EXISTS TABLE [db.]name [INTO OUTFILE filename] [FORMAT format]
 ```
 
 Returns a single `UInt8`-type column， which contains the single value `0` if the table or database doesn't exist， or `1` if the table exists in the specified database。
@@ -545,7 +545,7 @@ To make settings that persist after a server restart， you can only use the ser
 ## OPTIMIZE
 
 ```sql
-OPTIMIZE TABLE [db。]name [PARTITION partition] [FINAL]
+OPTIMIZE TABLE [db.]name [PARTITION partition] [FINAL]
 ```
 
 Asks the table engine to do something for optimization。
@@ -562,7 +562,7 @@ Adding data。
 Basic query format:
 
 ```sql
-INSERT INTO [db。]table [(c1， c2， c3)] VALUES (v11， v12， v13)， (v21， v22， v23)， 。。。
+INSERT INTO [db.]table [(c1, c2, c3)] VALUES (v11, v12, v13), (v21, v22, v23), ...
 ```
 
 The query can specify a list of columns to insert `[(c1， c2， c3)]`。 In this case， the rest of the columns are filled with:
@@ -570,18 +570,18 @@ The query can specify a list of columns to insert `[(c1， c2， c3)]`。 In thi
 - The values calculated from the `DEFAULT`  expressions specified in the table definition。
 - Zeros and empty strings， if `DEFAULT` expressions are not defined。
 
-If [strict_insert_defaults=1](。。/operations/settings/settings。md#settings-strict_insert_defaults)， columns that do not have ` DEFAULT` defined must be listed in the query。
+If [strict_insert_defaults=1](../operations/settings/settings.md#settings-strict_insert_defaults), columns that do not have ` DEFAULT` defined must be listed in the query。
 
-The INSERT can pass data in any [format](。。/formats/index。md#formats) supported by ClickHouse。 The format must be specified explicitly in the query:
+The INSERT can pass data in any [format](../formats/index.md#formats) supported by ClickHouse。 The format must be specified explicitly in the query:
 
 ```sql
-INSERT INTO [db。]table [(c1， c2， c3)] FORMAT format_name data_set
+INSERT INTO [db.]table [(c1, c2, c3)] FORMAT format_name data_set
 ```
 
-For example， the following query format is identical to the basic version of INSERT 。。。 VALUES:
+For example， the following query format is identical to the basic version of INSERT ... VALUES:
 
 ```sql
-INSERT INTO [db。]table [(c1， c2， c3)] FORMAT Values (v11， v12， v13)， (v21， v22， v23)， 。。。
+INSERT INTO [db.]table [(c1, c2, c3)] FORMAT Values (v11, v12, v13), (v21, v22, v23), ...
 ```
 
 ClickHouse removes all spaces and one line feed (if there is one) before the data。 When forming a query， we recommend putting the data on a new line after the query operators (this is important if the data begins with spaces)。
@@ -590,24 +590,24 @@ Example:
 
 ```sql
 INSERT INTO t FORMAT TabSeparated
-11  Hello， world!
+11  Hello, world!
 22  Qwerty
 ```
 
-You can insert data separately from the query by using the command-line client or the HTTP interface。 For more information， see the section "[Interfaces](。。/interfaces/index。md#interfaces)"。
+You can insert data separately from the query by using the command-line client or the HTTP interface。 For more information， see the section "[Interfaces](../interfaces/index.md#interfaces)"。
 
 ### Inserting the results of `SELECT`
 
 ```sql
-INSERT INTO [db。]table [(c1， c2， c3)] SELECT 。。。
+INSERT INTO [db.]table [(c1, c2, c3)] SELECT ...
 ```
 
 Columns are mapped according to their position in the SELECT clause。 However， their names in the SELECT expression and the table for INSERT may differ。 If necessary， type casting is performed。
 
 None of the data formats except Values allow setting values to expressions such as `now()`， `1 + 2`，  and so on。 The Values format allows limited use of expressions， but this is not recommended， because in this case inefficient code is used for their execution。
 
-Other queries for modifying data parts are not supported: `UPDATE`， `DELETE`， `REPLACE`， `MERGE`， `UPSERT`， `INSERT UPDATE`。
-However， you can delete old data using `ALTER TABLE 。。。 DROP PARTITION`。
+Other queries for modifying data parts are not supported: `UPDATE`, `DELETE`, `REPLACE`, `MERGE`, `UPSERT`, `INSERT UPDATE`。
+However， you can delete old data using `ALTER TABLE ... DROP PARTITION`。
 
 ### Performance considerations
 
@@ -627,17 +627,17 @@ Data sampling。
 
 ```sql
 SELECT [DISTINCT] expr_list
-    [FROM [db。]table | (subquery) | table_function] [FINAL]
+    [FROM [db.]table | (subquery) | table_function] [FINAL]
     [SAMPLE sample_coeff]
-    [ARRAY JOIN 。。。]
+    [ARRAY JOIN ...]
     [GLOBAL] ANY|ALL INNER|LEFT JOIN (subquery)|table USING columns_list
     [PREWHERE expr]
     [WHERE expr]
     [GROUP BY expr_list] [WITH TOTALS]
     [HAVING expr]
     [ORDER BY expr_list]
-    [LIMIT [n， ]m]
-    [UNION ALL 。。。]
+    [LIMIT [n, ]m]
+    [UNION ALL ...]
     [INTO OUTFILE filename]
     [FORMAT format]
     [LIMIT n BY columns]
@@ -680,10 +680,10 @@ Example:
 
 ```sql
 SELECT
-    Title，
+    Title,
     count() * 10 AS PageViews
 FROM hits_distributed
-SAMPLE 0。1
+SAMPLE 0.1
 WHERE
     CounterID = 34
     AND toDate(EventDate) >= toDate('2013-01-29')
@@ -710,25 +710,25 @@ Allows executing JOIN with an array or nested data structure。 The intent is si
 `ARRAY JOIN` is essentially `INNER JOIN` with an array。 Example:
 
 ```text
-:) CREATE TABLE arrays_test (s String， arr Array(UInt8)) ENGINE = Memory
+:) CREATE TABLE arrays_test (s String, arr Array(UInt8)) ENGINE = Memory
 
 CREATE TABLE arrays_test
 (
-    s String，
+    s String,
     arr Array(UInt8)
 ) ENGINE = Memory
 
 Ok。
 
-0 rows in set。 Elapsed: 0。001 sec。
+0 rows in set。 Elapsed: 0.001 sec。
 
-:) INSERT INTO arrays_test VALUES ('Hello'， [1，2])， ('World'， [3，4，5])， ('Goodbye'， [])
+:) INSERT INTO arrays_test VALUES ('Hello', [1,2]), ('World', [3,4,5]), ('Goodbye', [])
 
 INSERT INTO arrays_test VALUES
 
-Ok。
+Ok.
 
-3 rows in set。 Elapsed: 0。001 sec。
+3 rows in set. Elapsed: 0.001 sec。
 
 :) SELECT * FROM arrays_test
 
@@ -741,11 +741,11 @@ FROM arrays_test
 │ Goodbye │ []      │
 └─────────┴─────────┘
 
-3 rows in set。 Elapsed: 0。001 sec。
+3 rows in set. Elapsed: 0.001 sec.
 
-:) SELECT s， arr FROM arrays_test ARRAY JOIN arr
+:) SELECT s, arr FROM arrays_test ARRAY JOIN arr
 
-SELECT s， arr
+SELECT s, arr
 FROM arrays_test
 ARRAY JOIN arr
 
@@ -757,110 +757,110 @@ ARRAY JOIN arr
 │ World │   5 │
 └───────┴─────┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec.
 ```
 
 An alias can be specified for an array in the ARRAY JOIN clause。 In this case， an array item can be accessed by this alias， but the array itself by the original name。 Example:
 
 ```text
-:) SELECT s， arr， a FROM arrays_test ARRAY JOIN arr AS a
+:) SELECT s, arr, a FROM arrays_test ARRAY JOIN arr AS a
 
-SELECT s， arr， a
+SELECT s, arr, a
 FROM arrays_test
 ARRAY JOIN arr AS a
 
 ┌─s─────┬─arr─────┬─a─┐
-│ Hello │ [1，2]   │ 1 │
-│ Hello │ [1，2]   │ 2 │
-│ World │ [3，4，5] │ 3 │
-│ World │ [3，4，5] │ 4 │
-│ World │ [3，4，5] │ 5 │
+│ Hello │ [1,2]   │ 1 │
+│ Hello │ [1,2]   │ 2 │
+│ World │ [3,4,5] │ 3 │
+│ World │ [3,4,5] │ 4 │
+│ World │ [3,4,5] │ 5 │
 └───────┴─────────┴───┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec。
 ```
 
 Multiple arrays of the same size can be comma-separated in the ARRAY JOIN clause。 In this case， JOIN is performed with them simultaneously (the direct sum， not the direct product)。 Example:
 
 ```text
-:) SELECT s， arr， a， num， mapped FROM arrays_test ARRAY JOIN arr AS a， arrayEnumerate(arr) AS num， arrayMap(x -> x + 1， arr) AS mapped
+:) SELECT s, arr, a, num. mapped FROM arrays_test ARRAY JOIN arr AS a, arrayEnumerate(arr) AS num, arrayMap(x -> x + 1, arr) AS mapped
 
-SELECT s， arr， a， num， mapped
+SELECT s, arr, a, num, mapped
 FROM arrays_test
-ARRAY JOIN arr AS a， arrayEnumerate(arr) AS num， arrayMap(lambda(tuple(x)， plus(x， 1))， arr) AS mapped
+ARRAY JOIN arr AS a, arrayEnumerate(arr) AS num, arrayMap(lambda(tuple(x), plus(x, 1)), arr) AS mapped
 
 ┌─s─────┬─arr─────┬─a─┬─num─┬─mapped─┐
-│ Hello │ [1，2]   │ 1 │   1 │      2 │
-│ Hello │ [1，2]   │ 2 │   2 │      3 │
-│ World │ [3，4，5] │ 3 │   1 │      4 │
-│ World │ [3，4，5] │ 4 │   2 │      5 │
-│ World │ [3，4，5] │ 5 │   3 │      6 │
+│ Hello │ [1,2]   │ 1 │   1 │      2 │
+│ Hello │ [1,2]   │ 2 │   2 │      3 │
+│ World │ [3,4,5] │ 3 │   1 │      4 │
+│ World │ [3,4,5] │ 4 │   2 │      5 │
+│ World │ [3,4,5] │ 5 │   3 │      6 │
 └───────┴─────────┴───┴─────┴────────┘
 
-5 rows in set。 Elapsed: 0。002 sec。
+5 rows in set. Elapsed: 0.002 sec.
 
-:) SELECT s， arr， a， num， arrayEnumerate(arr) FROM arrays_test ARRAY JOIN arr AS a， arrayEnumerate(arr) AS num
+:) SELECT s,arr, a, num, arrayEnumerate(arr) FROM arrays_test ARRAY JOIN arr AS a, arrayEnumerate(arr) AS num
 
-SELECT s， arr， a， num， arrayEnumerate(arr)
+SELECT s, arr, a, num, arrayEnumerate(arr)
 FROM arrays_test
-ARRAY JOIN arr AS a， arrayEnumerate(arr) AS num
+ARRAY JOIN arr AS a, arrayEnumerate(arr) AS num
 
 ┌─s─────┬─arr─────┬─a─┬─num─┬─arrayEnumerate(arr)─┐
-│ Hello │ [1，2]   │ 1 │   1 │ [1，2]               │
-│ Hello │ [1，2]   │ 2 │   2 │ [1，2]               │
-│ World │ [3，4，5] │ 3 │   1 │ [1，2，3]             │
-│ World │ [3，4，5] │ 4 │   2 │ [1，2，3]             │
-│ World │ [3，4，5] │ 5 │   3 │ [1，2，3]             │
+│ Hello │ [1,2]   │ 1 │   1 │ [1,2]               │
+│ Hello │ [1,2]   │ 2 │   2 │ [1,2]               │
+│ World │ [3,4,5] │ 3 │   1 │ [1,2,3]             │
+│ World │ [3,4,5] │ 4 │   2 │ [1,2,3]             │
+│ World │ [3,4,5] │ 5 │   3 │ [1,2,3]             │
 └───────┴─────────┴───┴─────┴─────────────────────┘
 
-5 rows in set。 Elapsed: 0。002 sec。
+5 rows in set. Elapsed: 0.002 sec.
 ```
 
-ARRAY JOIN also works with nested data structures。 Example:
+ARRAY JOIN also works with nested data structures. Example:
 
 ```text
-:) CREATE TABLE nested_test (s String， nest Nested(x UInt8， y UInt32)) ENGINE = Memory
+:) CREATE TABLE nested_test (s String, nest Nested(x UInt8, y UInt32)) ENGINE = Memory
 
 CREATE TABLE nested_test
 (
-    s String，
+    s String,
     nest Nested(
-    x UInt8，
+    x UInt8,
     y UInt32)
 ) ENGINE = Memory
 
-Ok。
+Ok.
 
-0 rows in set。 Elapsed: 0。006 sec。
+0 rows in set. Elapsed: 0.006 sec.
 
-:) INSERT INTO nested_test VALUES ('Hello'， [1，2]， [10，20])， ('World'， [3，4，5]， [30，40，50])， ('Goodbye'， []， [])
+:) INSERT INTO nested_test VALUES ('Hello', [1,2], [10,20]), ('World', [3,4,5], [30,40,50]), ('Goodbye', [], [])
 
 INSERT INTO nested_test VALUES
 
-Ok。
+Ok.
 
-3 rows in set。 Elapsed: 0。001 sec。
+3 rows in set. Elapsed: 0.001 sec.
 
 :) SELECT * FROM nested_test
 
 SELECT *
 FROM nested_test
 
-┌─s───────┬─nest。x──┬─nest。y─────┐
-│ Hello   │ [1，2]   │ [10，20]    │
-│ World   │ [3，4，5] │ [30，40，50] │
+┌─s───────┬─nest.x──┬─nest.y─────┐
+│ Hello   │ [1,2]   │ [10,20]    │
+│ World   │ [3,4,5] │ [30,40,50] │
 │ Goodbye │ []      │ []         │
 └─────────┴─────────┴────────────┘
 
-3 rows in set。 Elapsed: 0。001 sec。
+3 rows in set. Elapsed: 0.001 sec.
 
-:) SELECT s， nest。x， nest。y FROM nested_test ARRAY JOIN nest
+:) SELECT s, nest.x, nest.y FROM nested_test ARRAY JOIN nest
 
-SELECT s， `nest。x`， `nest。y`
+SELECT s, `nest.x`, `nest.y`
 FROM nested_test
 ARRAY JOIN nest
 
-┌─s─────┬─nest。x─┬─nest。y─┐
+┌─s─────┬─nest.x─┬─nest.y─┐
 │ Hello │      1 │     10 │
 │ Hello │      2 │     20 │
 │ World │      3 │     30 │
@@ -868,19 +868,19 @@ ARRAY JOIN nest
 │ World │      5 │     50 │
 └───────┴────────┴────────┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec.
 ```
 
-When specifying names of nested data structures in ARRAY JOIN， the meaning is the same as ARRAY JOIN with all the array elements that it consists of。 Example:
+When specifying names of nested data structures in ARRAY JOIN, the meaning is the same as ARRAY JOIN with all the array elements that it consists of. Example:
 
 ```text
-:) SELECT s， nest。x， nest。y FROM nested_test ARRAY JOIN nest。x， nest。y
+:) SELECT s, nest.x, nest.y FROM nested_test ARRAY JOIN nest.x, nest.y
 
-SELECT s， `nest。x`， `nest。y`
+SELECT s, `nest.x`, `nest.y`
 FROM nested_test
-ARRAY JOIN `nest。x`， `nest。y`
+ARRAY JOIN `nest.x`, `nest.y`
 
-┌─s─────┬─nest。x─┬─nest。y─┐
+┌─s─────┬─nest.x─┬─nest.y─┐
 │ Hello │      1 │     10 │
 │ Hello │      2 │     20 │
 │ World │      3 │     30 │
@@ -888,72 +888,72 @@ ARRAY JOIN `nest。x`， `nest。y`
 │ World │      5 │     50 │
 └───────┴────────┴────────┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec.
 ```
 
 This variation also makes sense:
 
 ```text
-:) SELECT s， nest。x， nest。y FROM nested_test ARRAY JOIN nest。x
+:) SELECT s, nest.x, nest.y FROM nested_test ARRAY JOIN nest.x
 
-SELECT s， `nest。x`， `nest。y`
+SELECT s, `nest.x`, `nest.y`
 FROM nested_test
-ARRAY JOIN `nest。x`
+ARRAY JOIN `nest.x`
 
-┌─s─────┬─nest。x─┬─nest。y─────┐
-│ Hello │      1 │ [10，20]    │
-│ Hello │      2 │ [10，20]    │
-│ World │      3 │ [30，40，50] │
-│ World │      4 │ [30，40，50] │
-│ World │      5 │ [30，40，50] │
+┌─s─────┬─nest.x─┬─nest.y─────┐
+│ Hello │      1 │ [10,20]    │
+│ Hello │      2 │ [10,20]    │
+│ World │      3 │ [30,40,50] │
+│ World │      4 │ [30,40,50] │
+│ World │      5 │ [30,40,50] │
 └───────┴────────┴────────────┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec.
 ```
 
-An alias may be used for a nested data structure， in order to select either the JOIN result or the source array。 Example:
+An alias may be used for a nested data structure, in order to select either the JOIN result or the source array. Example:
 
 ```text
-:) SELECT s， n。x， n。y， nest。x， nest。y FROM nested_test ARRAY JOIN nest AS n
+:) SELECT s, n.x, n.y, nest.x, nest.y FROM nested_test ARRAY JOIN nest AS n
 
-SELECT s， `n。x`， `n。y`， `nest。x`， `nest。y`
+SELECT s, `n.x`, `n.y`, `nest.x`, `nest.y`
 FROM nested_test
 ARRAY JOIN nest AS n
 
-┌─s─────┬─n。x─┬─n。y─┬─nest。x──┬─nest。y─────┐
-│ Hello │   1 │  10 │ [1，2]   │ [10，20]    │
-│ Hello │   2 │  20 │ [1，2]   │ [10，20]    │
-│ World │   3 │  30 │ [3，4，5] │ [30，40，50] │
-│ World │   4 │  40 │ [3，4，5] │ [30，40，50] │
-│ World │   5 │  50 │ [3，4，5] │ [30，40，50] │
+┌─s─────┬─n.x─┬─n.y─┬─nest.x──┬─nest.y─────┐
+│ Hello │   1 │  10 │ [1,2]   │ [10,20]    │
+│ Hello │   2 │  20 │ [1,2]   │ [10,20]    │
+│ World │   3 │  30 │ [3,4,5] │ [30,40,50] │
+│ World │   4 │  40 │ [3,4,5] │ [30,40,50] │
+│ World │   5 │  50 │ [3,4,5] │ [30,40,50] │
 └───────┴─────┴─────┴─────────┴────────────┘
 
-5 rows in set。 Elapsed: 0。001 sec。
+5 rows in set. Elapsed: 0.001 sec.
 ```
 
 Example of using the arrayEnumerate function:
 
 ```text
-:) SELECT s， n。x， n。y， nest。x， nest。y， num FROM nested_test ARRAY JOIN nest AS n， arrayEnumerate(nest。x) AS num
+:) SELECT s, n.x, n.y, nest.x, nest.y, num FROM nested_test ARRAY JOIN nest AS n, arrayEnumerate(nest.x) AS num
 
-SELECT s， `n。x`， `n。y`， `nest。x`， `nest。y`， num
+SELECT s, `n.x`, `n.y`, `nest.x`, `nest.y`, num
 FROM nested_test
-ARRAY JOIN nest AS n， arrayEnumerate(`nest。x`) AS num
+ARRAY JOIN nest AS n, arrayEnumerate(`nest.x`) AS num
 
-┌─s─────┬─n。x─┬─n。y─┬─nest。x──┬─nest。y─────┬─num─┐
-│ Hello │   1 │  10 │ [1，2]   │ [10，20]    │   1 │
-│ Hello │   2 │  20 │ [1，2]   │ [10，20]    │   2 │
-│ World │   3 │  30 │ [3，4，5] │ [30，40，50] │   1 │
-│ World │   4 │  40 │ [3，4，5] │ [30，40，50] │   2 │
-│ World │   5 │  50 │ [3，4，5] │ [30，40，50] │   3 │
+┌─s─────┬─n.x─┬─n.y─┬─nest.x──┬─nest.y─────┬─num─┐
+│ Hello │   1 │  10 │ [1,2]   │ [10,20]    │   1 │
+│ Hello │   2 │  20 │ [1,2]   │ [10,20]    │   2 │
+│ World │   3 │  30 │ [3,4,5] │ [30,40,50] │   1 │
+│ World │   4 │  40 │ [3,4,5] │ [30,40,50] │   2 │
+│ World │   5 │  50 │ [3,4,5] │ [30,40,50] │   3 │
 └───────┴─────┴─────┴─────────┴────────────┴─────┘
 
-5 rows in set。 Elapsed: 0。002 sec。
+5 rows in set. Elapsed: 0.002 sec.
 ```
 
-The query can only specify a single ARRAY JOIN clause。
+The query can only specify a single ARRAY JOIN clause.
 
-The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause)， or after completing WHERE/PREWHERE (to reduce the volume of calculations)。
+The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
 ### JOIN 语句
 
@@ -976,7 +976,7 @@ JOIN标准语句， 与ARRAY JOIN 关系不大。
 有如下几种类型的JOIN:
 
 
-INNER 或 LEFT 类型: 如果 INNER 被指定，结果仅包含这些行，在右表中匹配的行。 如果 LEFT 被指定，任何在左表中的行没有匹配右表中的行都将被分配默认值 - zeros or empty rows。 LEFT OUTER 可以被写来替代LEFT; OUTER 不影响任何事情。
+INNER 或 LEFT 类型: 如果 INNER 被指定，结果仅包含这些行，在右表中匹配的行。 如果 LEFT 被指定，任何在左表中的行没有匹配右表中的行都将被分配默认值 - 0或空行。 LEFT OUTER 可以被写来替代LEFT; OUTER 不影响任何事情。
 
 
 
@@ -996,7 +996,7 @@ GLOBAL 分布:
 
 
 
-当使用 GLOBAL 。。。 JOIN， 首先 请求服务器运行子查询来计算右表。 此临时表被传递到每个远程服务器， 查询运行在临时表上。
+当使用 GLOBAL ... JOIN， 首先 请求服务器运行子查询来计算右表。 此临时表被传递到每个远程服务器， 查询运行在临时表上。
 
 
 
@@ -1015,22 +1015,22 @@ GLOBAL 分布:
 示例:
 
 SELECT
-    CounterID，
-    hits，
+    CounterID,
+    hits,
     visits
 FROM
 (
     SELECT
-        CounterID，
+        CounterID,
         count() AS hits
-    FROM test。hits
+    FROM test.hits
     GROUP BY CounterID
 ) ANY LEFT JOIN
 (
     SELECT
-        CounterID，
+        CounterID,
         sum(Sign) AS visits
-    FROM test。visits
+    FROM test.visits
     GROUP BY CounterID
 ) USING CounterID
 ORDER BY hits DESC
@@ -1112,8 +1112,8 @@ PREWHERE 仅被`*MergeTree`表引擎家族支持。
 
 ```sql
 SELECT
-    count()，
-    median(FetchTiming > 60 ? 60 : FetchTiming)，
+    count(),
+    median(FetchTiming > 60 ? 60 : FetchTiming),
     count() - sum(Refresh)
 FROM hits
 ```
@@ -1126,9 +1126,9 @@ Example:
 
 ```sql
 SELECT
-    domainWithoutWWW(URL) AS domain，
-    count()，
-    any(Title) AS title -- getting the first occurred page header for each domain。
+    domainWithoutWWW(URL) AS domain,
+    count(),
+    any(Title) AS title -- getting the first occurred page header for each domain.
 FROM hits
 GROUP BY domain
 ```
@@ -1190,14 +1190,14 @@ Example:
 
 ```sql
 SELECT
-    domainWithoutWWW(URL) AS domain，
-    domainWithoutWWW(REFERRER_URL) AS referrer，
-    device_type，
+    domainWithoutWWW(URL) AS domain,
+    domainWithoutWWW(REFERRER_URL) AS referrer,
+    device_type,
     count() cnt
 FROM hits
-GROUP BY domain， referrer， device_type
+GROUP BY domain, referrer, device_type
 ORDER BY cnt DESC
-LIMIT 5 BY domain， device_type
+LIMIT 5 BY domain, device_type
 LIMIT 100
 ```
 
@@ -1264,14 +1264,14 @@ If there isn't an ORDER BY clause that explicitly sorts results， the result ma
 You can use UNION ALL to combine any number of queries。 Example:
 
 ```sql
-SELECT CounterID， 1 AS table， toInt64(count()) AS c
-    FROM test。hits
+SELECT CounterID, 1 AS table, toInt64(count()) AS c
+    FROM test.hits
     GROUP BY CounterID
 
 UNION ALL
 
-SELECT CounterID， 2 AS table， sum(Sign) AS c
-    FROM test。visits
+SELECT CounterID, 2 AS table, sum(Sign) AS c
+    FROM test.visits
     GROUP BY CounterID
     HAVING c > 0
 ```
@@ -1310,8 +1310,8 @@ The left side of the operator is either a single column or a tuple。
 Examples:
 
 ```sql
-SELECT UserID IN (123， 456) FROM 。。。
-SELECT (CounterID， UserID) IN ((34， 123)， (101500， 456)) FROM 。。。
+SELECT UserID IN (123, 456) FROM ...
+SELECT (CounterID, UserID) IN ((34, 123), (101500, 456)) FROM ...
 ```
 
 If the left side is a single column that is in the index， and the right side is a set of constants， the system uses the index for processing the query。
@@ -1328,7 +1328,7 @@ The subquery may specify more than one column for filtering tuples。
 Example:
 
 ```sql
-SELECT (CounterID， UserID) IN (SELECT CounterID， UserID FROM 。。。) FROM 。。。
+SELECT (CounterID, UserID) IN (SELECT CounterID, UserID FROM ...) FROM ...
 ```
 
 The columns to the left and right of the IN operator should have the same type。
@@ -1338,14 +1338,14 @@ Example:
 
 ```sql
 SELECT
-    EventDate，
+    EventDate,
     avg(UserID IN
     (
         SELECT UserID
-        FROM test。hits
+        FROM test.hits
         WHERE EventDate = toDate('2014-03-17')
     )) AS ratio
-FROM test。hits
+FROM test.hits
 GROUP BY EventDate
 ORDER BY EventDate ASC
 ```
@@ -1353,12 +1353,12 @@ ORDER BY EventDate ASC
 ```text
 ┌──EventDate─┬────ratio─┐
 │ 2014-03-17 │        1 │
-│ 2014-03-18 │ 0。807696 │
-│ 2014-03-19 │ 0。755406 │
-│ 2014-03-20 │ 0。723218 │
-│ 2014-03-21 │ 0。697021 │
-│ 2014-03-22 │ 0。647851 │
-│ 2014-03-23 │ 0。648416 │
+│ 2014-03-18 │ 0.807696 │
+│ 2014-03-19 │ 0.755406 │
+│ 2014-03-20 │ 0.723218 │
+│ 2014-03-21 │ 0.697021 │
+│ 2014-03-22 │ 0.647851 │
+│ 2014-03-23 │ 0.648416 │
 └────────────┴──────────┘
 ```
 
@@ -1373,7 +1373,7 @@ There are two options for IN-s with subqueries (similar to JOINs): normal `IN`  
 
 <div class="admonition attention">
 
-Remember that the algorithms described below may work differently depending on the [](。。/operations/settings/settings。md#settings-distributed_product_mode) `distributed_product_mode` setting。
+Remember that the algorithms described below may work differently depending on the [].../operations/settings/settings.md#settings-distributed_product_mode) `distributed_product_mode` setting。
 
 </div>
 
