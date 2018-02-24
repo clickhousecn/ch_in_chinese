@@ -1,8 +1,8 @@
-# Arithmetic functions
+# 算数函数
 
-For all arithmetic functions, the result type is calculated as the smallest number type that the result fits in, if there is such a type. The minimum is taken simultaneously based on the number of bits, whether it is signed, and whether it floats. If there are not enough bits, the highest bit type is taken.
+对于所有的算术函数，结果类型为适合结果的最小数值类型(如果有这样的类型)。最小值是基于比特位数，是否为标记，是否是浮点数。 如果没有足够的比特位数, 最高的比特类型将被采纳. 例如:
 
-Example:
+例如:
 
 ```sql
 SELECT toTypeName(0), toTypeName(0 + 0), toTypeName(0 + 0 + 0), toTypeName(0 + 0 + 0 + 0)
@@ -14,62 +14,63 @@ SELECT toTypeName(0), toTypeName(0 + 0), toTypeName(0 + 0 + 0), toTypeName(0 + 0
 └───────────────┴────────────────────────┴─────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
-Arithmetic functions work for any pair of types from UInt8, UInt16, UInt32, UInt64, Int8, Int16, Int32, Int64, Float32, or Float64.
+算数函数为如下任意类型的服务：UInt8，UInt16，UInt32，UInt64，Int8，Int16，Int32，Int64，Float32，或 Float64。
 
-Overflow is produced the same way as in C++.
+溢出以C++的方式生成。
 
-## plus(a, b), a + b operator
+## plus(a, b), a + b 操作符
 
-Calculates the sum of the numbers.
-You can also add integer numbers with a date or date and time. In the case of a date, adding an integer means adding the corresponding number of days. For a date with time, it means adding the corresponding number of seconds.
+计算数的总和。你也可以添加带Date或DateTime的整形数。对于 Date 类型，添加一个整形意味着添加对应的天数。对于一个带有时间的日期，意味着添加对应的秒数。
 
-## minus(a, b), a - b operator
 
-Calculates the difference. The result is always signed.
 
-You can also calculate integer numbers from a date or date with time. The idea is the same – see above for 'plus'.
+## minus(a, b), a - b 操作符
 
-## multiply(a, b), a \* b operator
+计算差值。此结果通常是标记的。你也能从日期或带有时间的日期类型上计算整形数。思路与上述 'plus' 操作符相同。 
 
-Calculates the product of the numbers.
 
-## divide(a, b), a / b operator
 
-Calculates the quotient of the numbers. The result type is always a floating-point type.
-It is not integer division. For integer division, use the 'intDiv' function.
-When dividing by zero you get 'inf', '-inf', or 'nan'.
+## multiply(a, b), a \* b 操作符
 
-## intDiv(a, b)
+计算数值相乘。
 
-Calculates the quotient of the numbers. Divides into integers, rounding down (by the absolute value).
-An exception is thrown when dividing by zero or when dividing a minimal negative number by minus one.
+## divide(a, b), a / b 操作符
+
+计算数值相除。结果类型通常是一个浮点类型。不是整数相除。对于整数相除，使用 'intDiv' 函数。当除以0时，结果为 'inf'，'-inf'，或者 'nan'。 
+
+## isDiv(a, b)
+
+计算商数。 除以整数， 四舍五入(通过绝对值). 当除以0或最小负整数时，抛出异常. 
+
+
 
 ## intDivOrZero(a, b)
 
-Differs from 'intDiv' in that it returns zero when dividing by zero or when dividing a minimal negative number by minus one.
+不同于'intDiv'函数，当除以0或当除以一个最小负整数时，它将返回0。
+
+
 
 ## modulo(a, b), a % b operator
 
-Calculates the remainder after division.
-If arguments are floating-point numbers, they are pre-converted to integers by dropping the decimal portion.
-The remainder is taken in the same sense as in C++. Truncated division is used for negative numbers.
-An exception is thrown when dividing by zero or when dividing a minimal negative number by minus one.
+在相除之后计算剩余数。
+如果参数是浮点数，通过去除浮点精度部分，先转换为整数。 剩余数与C++处理方式相同。截取相除用于负数。当除以0或者当除以最小负数，将抛出一个异常。
 
-## negate(a), -a operator
 
-Calculates a number with the reverse sign. The result is always signed.
 
-## abs(a)
+## negate(a), -a 操作符
 
-Calculates the absolute value of the number (a). That is, if a &lt; 0, it returns -a. For unsigned types it doesn't do anything. For signed integer types, it returns an unsigned number.
+计算一个带有反符号的数字。 结果通常带有符号。
 
-## gcd(a, b)
+## abs(a) 操作符
 
-Returns the greatest common divisor of the numbers.
-An exception is thrown when dividing by zero or when dividing a minimal negative number by minus one.
+计算数值的绝对值(a)。  如果 a < 0，它将返回 -a。 对于非符号类型，则什么都不做。对于带符号整型类型, 将返回非符号数值。 
 
-## lcm(a, b)
+## gcd(a, b) 操作符
 
-Returns the least common multiple of the numbers.
-An exception is thrown when dividing by zero or when dividing a minimal negative number by minus one.
+返回数值最通用的除数。
+当除以0或当除以最小负数后，异常将抛出。
 
+## lcm(a, b) 操作符
+
+返回最通用的乘数。
+当除以0或当除以最小负数后，异常将抛出。
