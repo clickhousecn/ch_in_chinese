@@ -1,19 +1,19 @@
-#Queries
+#查询
 
-## CREATE DATABASE
+## 创建数据库
 
-Creating db_name databases
+创建 db_name 数据库
 
 ```sql
 CREATE DATABASE [IF NOT EXISTS] db_name
 ```
 
-`A database` is just a directory for tables.
-If `IF NOT EXISTS` is included, the query won't return an error if the database already exists.
+`一个数据库` 是表的一个目录.
+如果包含 `IF NOT EXISTS`, 如果数据库已经存在, 查询不返回错误.
 
-## CREATE TABLE
+## 创建表
 
-The `CREATE TABLE` query can have several forms.
+`CREATE TABLE` 查询有一些形式.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name [ON CLUSTER cluster]
@@ -24,86 +24,86 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name [ON CLUSTER cluster]
 ) ENGINE = engine
 ```
 
-Creates a table named 'name' in the 'db' database or the current database if 'db' is not set, with the structure specified in brackets and the 'engine' engine.
-The structure of the table is a list of column descriptions. If indexes are supported by the engine, they are indicated as parameters for the table engine.
+创建一个表名称为 'name' 在 'db' 数据库中或者当前数据库,如果'db' 没有被设置, 其结构指定在 brackets 和 'engine' 引擎中.
+表结构是列描述的一个列表. 如果引擎支持索引, 对于表引擎来说, 他们被提示作为参数.
 
-A column description is `name type` in the simplest case. Example: `RegionID UInt32`.
-Expressions can also be defined for default values (see below).
+在最简单的情况下, 一个列的描述符是 `name type`. 例如: `RegionID UInt32`.
+表达式也能够为默认值定义.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name AS [db2.]name2 [ENGINE = engine]
 ```
 
-Creates a table with the same structure as another table. You can specify a different engine for the table. If the engine is not specified, the same engine will be used as for the `db2.name2` table.
+用另外一个表的结构创建表. 你能够为表指定不同的引擎. 如果引擎没有被指定, 相同的引擎将被应用于 `db2.name2` 表.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name ENGINE = engine AS SELECT ...
 ```
 
-Creates a table with a structure like the result of the `SELECT` query, with the 'engine' engine, and fills it with data from SELECT.
+创建一个带有`SELECT`查询结果类似结构的表, 带有 'engine' 引擎, 同时从SELECT中添加数据.
 
-In all cases, if `IF NOT EXISTS` is specified, the query won't return an error if the table already exists. In this case, the query won't do anything.
+在所有的情况下, 如果 `IF NOT EXISTS` 被指定, 查询不返回错误, 如果表已经存在. 在这种情况下, 此查询不做任何事情.
 
-### Default values
+### 默认值
 
-The column description can specify an expression for a default value, in one of the following ways:`DEFAULT expr`, `MATERIALIZED expr`, `ALIAS expr`.
-Example: `URLDomain String DEFAULT domain(URL)`.
+列描述符能够为默认值指定一个表达式, 可以使用下列方法:`DEFAULT expr`, `MATERIALIZED expr`, `ALIAS expr`.
+示例: `URLDomain String DEFAULT domain(URL)`.
 
-If an expression for the default value is not defined, the default values will be set to zeros for numbers, empty strings for strings, empty arrays for arrays, and `0000-00-00` for dates or `0000-00-00 00:00:00` for dates with time. NULLs are not supported.
+如果对默认值的表达式没有被定义, 默认值将被设置为0(数字), 空字符串(字符), 空数组(数组), 和 `0000-00-00`(日期) 或者 `0000-00-00 00:00:00` (日期). NULLs值不被支持.
 
-If the default expression is defined, the column type is optional. If there isn't an explicitly defined type, the default expression type is used. Example: `EventDate DEFAULT toDate(EventTime)` – the 'Date' type will be used for the 'EventDate' column.
+如果默认表达式被定义, 列类型是可选的. 如果没有一个明确的定义类型, 默认表达式类型被使用. 示例: `EventDate DEFAULT toDate(EventTime)` –  'Date' 类型将被用在'EventDate' 列上.
 
-If the data type and default expression are defined explicitly, this expression will be cast to the specified type using type casting functions. Example: `Hits UInt32 DEFAULT 0` means the same thing as `Hits UInt32 DEFAULT toUInt32(0)`.
+如果数据类型和默认的表达式被明确定义出来, 此表达式将被转换到指定的类型(使用类型转换函数). 示例: `Hits UInt32 DEFAULT 0` 与 `Hits UInt32 DEFAULT toUInt32(0)`意思相同.
 
-Default expressions may be defined as an arbitrary expression from table constants and columns. When creating and changing the table structure, it checks that expressions don't contain loops. For INSERT, it checks that expressions are resolvable – that all columns they can be calculated from have been passed.
+默认表达式能够被定义作为一个任意的表达式, 从表的常量和列中. 当创建和更改表结构时, 它将检查表达式不包含循环. 对于INSERT操作, 它检查了表达式是可解析的 – 能够计算所有传递进去的列.
 
 `DEFAULT expr`
 
-Normal default value. If the INSERT query doesn't specify the corresponding column, it will be filled in by computing the corresponding expression.
+正常默认值. 如果 INSERT 查询并不指定对应的列, 它将通过计算对应的表达式来填充.
 
 `MATERIALIZED expr`
 
-Materialized expression. Such a column can't be specified for INSERT, because it is always calculated.
-For an INSERT without a list of columns, these columns are not considered.
-In addition, this column is not substituted when using an asterisk in a SELECT query. This is to preserve the invariant that the dump obtained using `SELECT *` can be inserted back into the table using INSERT without specifying the list of columns.
+物化表达式. 这样一个列不能被指定到INSERT操作中, 因为它经常被计算.
+对于一个INSERT操作来说,没有一个列的列表, 这些列将不被考虑.
+另外, 此列不能被替换,当在SELECT语句中使用*号时. 这个将保证不可变性, 获得的 dump 使用 `SELECT *` 插回到表中, 使用 INSERT不能指定列的列表.
 
 `ALIAS expr`
 
-Synonym. Such a column isn't stored in the table at all.
-Its values can't be inserted in a table, and it is not substituted when using an asterisk in a SELECT query.
-It can be used in SELECTs if the alias is expanded during query parsing.
+近义词. 这样的列根本不在表中保存.
+它的值不插入到表中, 同时它没有被替换, 当在SELECT查询中使用*号时.
+如果昵称在查询解析时被扩展, 它能够被用在 SELECTs 中.
 
-When using the ALTER query to add new columns, old data for these columns is not written. Instead, when reading old data that does not have values for the new columns, expressions are computed on the fly by default. However, if running the expressions requires different columns that are not indicated in the query, these columns will additionally be read, but only for the blocks of data that need it.
+当使用 ALTER 查询时添加新的列, 这些列中旧的数据不会被写. 相反, 当读取旧的数据时, 新列没有值, 表达式默认情况下是被计算. 然而, 如果运行表达式需要不同的列, 列没有在查询中提示, 这些列将被额外读取, 但是仅对于需要它的数据块.
 
-If you add a new column to a table but later change its default expression, the values used for old data will change (for data where values were not stored on the disk). Note that when running background merges, data for columns that are missing in one of the merging parts is written to the merged part.
+如果你添加新列到一个表中, 但是又改变了它的默认表达式, 此值所使用的旧值将被改变 (此值并不保存在磁盘上). 注意:当运行 Merge 北京线程时, 对于丢失正在合并部分的列的数据 被写到已经合并的部分.
 
-It is not possible to set default values for elements in nested data structures.
+在嵌套的数据结构中, 不可能设置默认值.
 
-### Temporary tables
+### 临时表
 
-In all cases, if `TEMPORARY` is specified, a temporary table will be created. Temporary tables have the following characteristics:
+在所有情况下, 如果 `TEMPORARY` 被指定, 一个临时表将被创建. 临时表有如下的特性:
 
-- Temporary tables disappear when the session ends, including if the connection is lost.
-- A temporary table is created with the Memory engine. The other table engines are not supported.
-- The DB can't be specified for a temporary table. It is created outside of databases.
-- If a temporary table has the same name as another one and a query specifies the table name without specifying the DB, the temporary table will be used.
-- For distributed query processing, temporary tables used in a query are passed to remote servers.
+- 当 session 结束时, 临时表消失, 包括连接丢失.
+- 一个临时表用Memory引擎被创建. 其他表引擎不被支持.
+- 对于一个临时表, DB 不能被指定. 它被创建在数据库之外.
+- 如果一个临时表与另外的表名称相同, 同时一个查询指定表名, 不指定DB, 临时表将被使用.
+- 对于分布式查询处理, 查询中使用的临时表被传递给远程服务器.
 
-In most cases, temporary tables are not created manually, but when using external data for a query, or for distributed `(GLOBAL) IN`. For more information, see the appropriate sections
+在大多数情况下, 临时表不是手工创建, 而是使用外表查询, 或者是分布式 `(GLOBAL) IN` 时. 对于更多信息, 查看章节
 
-Distributed DDL queries (ON CLUSTER clause)
+分布式 DDL 查询 (ON CLUSTER 语句)
 ----------------------------------------------
 
-The `CREATE`, `DROP`, `ALTER`, and `RENAME` queries support distributed execution on a cluster.
-For example, the following query creates the `all_hits` `Distributed` table on each host in `cluster`:
+`CREATE`, `DROP`, `ALTER`, 和 `RENAME` 查询支持在集群中分布式执行.
+例如, 如下的查询创建了 `all_hits` `Distributed` 表, 在每个主机中的 `cluster`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS all_hits ON CLUSTER cluster (p Date, i Int32) ENGINE = Distributed(cluster, default, hits)
 ```
 
-In order to run these queries correctly, each host must have the same cluster definition (to simplify syncing configs, you can use substitutions from ZooKeeper). They must also connect to the ZooKeeper servers.
-The local version of the query will eventually be implemented on each host in the cluster, even if some hosts are currently not available. The order for executing queries within a single host is guaranteed.
-` ALTER` queries are not yet supported for replicated tables.
+为了正确地运行这些查询, 每个主机必须有相同的集群定义 (为了简化同步配置, 你能够从ZooKeeper进行订阅). 他们也必须连接到ZooKeeper 服务器上.
+查询的本地版本将最终在集群的每台机器上被实现, 即使一些主机当前是不可用的. 在单个主机内的执行查询顺序是有保障的.
+` ALTER` 查询对于复制表来说还不支持.
 
 ## CREATE VIEW
 
@@ -111,94 +111,94 @@ The local version of the query will eventually be implemented on each host in th
 CREATE [MATERIALIZED] VIEW [IF NOT EXISTS] [db.]name [TO[db.]name] [ENGINE = engine] [POPULATE] AS SELECT ...
 ```
 
-Creates a view. There are two types of views: normal and MATERIALIZED.
+创建一个视图. 有2中类型的视图: Normal 和 MATERIALIZED.
 
-When creating a materialized view, you must specify ENGINE – the table engine for storing data.
+当创建一个物化视图时, 你必须指定 ENGINE – 对于存储数据的表引擎.
 
-A materialized view works as follows: when inserting data to the table specified in SELECT, part of the inserted data is converted by this SELECT query, and the result is inserted in the view.
+一个物化视图工作如下: 当使用SELECT插入数据到表中时, 插入数据的部分通过SELECT查询被转化, 同时结果被插入到视图中.
 
-Normal views don't store any data, but just perform a read from another table. In other words, a normal view is nothing more than a saved query. When reading from a view, this saved query is used as a subquery in the FROM clause.
+Normal视图不存储任何数据, 但是从另外一个表中执行一个读操作. 换句话说, 一个normal视图不比一个保存的查询多. 当从一个视图中读取时, 这个保存的查询被用于作为FROM语句中的一个子查询.
 
-As an example, assume you've created a view:
+作为一个示例, 假设你已经创建了一个视图:
 
 ```sql
 CREATE VIEW view AS SELECT ...
 ```
 
-and written a query:
+同时写到一个查询中:
 
 ```sql
 SELECT a, b, c FROM view
 ```
 
-This query is fully equivalent to using the subquery:
+此查询最终与使用子查询等价:
 
 ```sql
 SELECT a, b, c FROM (SELECT ...)
 ```
 
-Materialized views store data transformed by the corresponding SELECT query.
+物化视图保存数据通过对应的SELECT查询来转换.
 
-When creating a materialized view, you must specify ENGINE – the table engine for storing data.
+当创建一个物化视图时, 你必须指定 ENGINE – 保存数据的表引擎.
 
-A materialized view is arranged as follows: when inserting data to the table specified in SELECT, part of the inserted data is converted by this SELECT query, and the result is inserted in the view.
+一个物化视图被安排如下: 当插入数据到指定SELECT的表中时, 插入数据的部分通过SELECT查询来转化, 同时结果被插入到视图中.
 
-If you specify POPULATE, the existing table data is inserted in the view when creating it, as if making a `CREATE TABLE ... AS SELECT ...` . Otherwise, the query contains only the data inserted in the table after creating the view. We don't recommend using POPULATE, since data inserted in the table during the view creation will not be inserted in it.
+如果你指定了POPULATE, 当它创建时, 现有的表数据被插入到视图中, 好像进行了一个 `CREATE TABLE ... AS SELECT ...` . 否则, 在创建视图之后, 此查询仅包含插入在表中的数据. 我们不推荐使用 POPULATE, 在创建视图过程中插入到表中的数据不插入到视图中.
 
-A `SELECT` query can contain `DISTINCT`, `GROUP BY`, `ORDER BY`, `LIMIT`... Note that the corresponding conversions are performed independently on each block of inserted data. For example, if `GROUP BY` is set, data is aggregated during insertion, but only within a single packet of inserted data. The data won't be further aggregated. The exception is when using an ENGINE that independently performs data aggregation, such as `SummingMergeTree`.
+一个 `SELECT` 查询能够包含 `DISTINCT`, `GROUP BY`, `ORDER BY`, `LIMIT`... 注意: 对应的转换独立地在每个插入数据的数据块中执行. 例如, 如果 `GROUP BY` 被设置, 数据在插入时就进行聚合, 但是仅在单个插入的数据包中. 数据并不进一步聚合. 此异常是当使用一个ENGINE引擎时, 独立运行数据聚合, 例如 `SummingMergeTree`.
 
-The execution of `ALTER` queries on materialized views has not been fully developed, so they might be inconvenient. If the materialized view uses the construction ``TO [db.]name``, you can ``DETACH`` the view, run ``ALTER`` for the target table, and then ``ATTACH`` the previously detached (``DETACH``) view.
+在物化视图的 `ALTER` 查询执行上正在开发中, 因此他们使用上不是特别方便. 如果物化视图使用结构 ``TO [db.]name``, 你能够 ``DETACH`` 此视图, 在目标表中运行 ``ALTER``, 然后 ``ATTACH`` 之前卸载的 (``DETACH``) 视图.
 
-Views look the same as normal tables. For example, they are listed in the result of the `SHOW TABLES` query.
+视图看起来与正常表一样. 例如, 他们以`SHOW TABLES`查询的结果被列出.
 
-There isn't a separate query for deleting views. To delete a view, use `DROP TABLE`.
+在删除视图方面，没有另外的语句. 如果要删除视图, 则使用 `DROP TABLE`.
 
-## ATTACH
+## 挂载
 
-This query is exactly the same as `CREATE`, but
+此查询与`CREATE`相同, 但是
 
-- instead of the word `CREATE` it uses the word `ATTACH`.
-- The query doesn't create data on the disk, but assumes that data is already in the appropriate places, and just adds information about the table to the server.
-After executing an ATTACH query, the server will know about the existence of the table.
+- 并没有使用`CREATE` 关键字, 而是使用了`ATTACH`.
+- 此查询并不在磁盘上创建数据, 而是假设数据已经在指定的位置, 仅是添加有关表的信息到服务器中.
+当执行 ATTACH 查询之后, 服务器将知道表的存在.
 
-If the table was previously detached (``DETACH``), meaning that its structure is known, you can use shorthand without defining the structure.
+如果表在之前执行了`DETACH`, 这意味着此结构是已知的, 你能够使用没有定义结构的简写.
 
 ```sql
 ATTACH TABLE [IF NOT EXISTS] [db.]name
 ```
 
-This query is used when starting the server. The server stores table metadata as files with `ATTACH` queries, which it simply runs at launch (with the exception of system tables, which are explicitly created on the server).
+此查询在启动服务器时被执行. 服务器保存了表的元数据作为带有`ATTACH`查询的文件, 它直接运行在启动时(在服务器上创建).
 
 ## DROP
 
-This query has two types: `DROP DATABASE`  and `DROP TABLE`.
+此查询有2种类型: `DROP DATABASE` 和 `DROP TABLE`.
 
 ```sql
 DROP DATABASE [IF EXISTS] db [ON CLUSTER cluster]
 ```
 
-Deletes all tables inside the 'db' database, then deletes the 'db' database itself.
-If `IF EXISTS` is specified, it doesn't return an error if the database doesn't exist.
+删除'db'数据库内所有的表, 然后删除'db'自己.
+如果 `IF EXISTS` 被指定, 如果此数据库不存在, 它不返回错误.
 
 ```sql
 DROP TABLE [IF EXISTS] [db.]name [ON CLUSTER cluster]
 ```
 
-Deletes the table.
-If `IF EXISTS` is specified, it doesn't return an error if the table doesn't exist or the database doesn't exist.
+删除此表.
+如果 `IF EXISTS` 被指定, 它不返回一个错误, 如果此表不存在或者数据库不存在.
 
 ## DETACH
 
-Deletes information about the 'name' table from the server. The server stops knowing about the table's existence.
+删除服务器中有关'name' 表中的信息. 然后服务器不知道有此表的存在.
 
 ```sql
 DETACH TABLE [IF EXISTS] [db.]name
 ```
 
-This does not delete the table's data or metadata. On the next server launch, the server will read the metadata and find out about the table again.
-Similarly, a "detached" table can be re-attached using the `ATTACH` query (with the exception of system tables, which do not have metadata stored for them).
+它不删除表的数据或元数据. 在下一次服务器启动时, 服务器将读取元数据, 再次找到此表.
+与之类似, 使用`ATTACH`查询, 一个 "detached" 表能够被重新挂载 (除了系统表, 它没有元数据存储).
 
-There is no `DETACH DATABASE` query.
+注意, 没有 `DETACH DATABASE` 语句.
 
 ## RENAME
 
