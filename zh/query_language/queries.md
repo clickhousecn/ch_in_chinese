@@ -1,19 +1,19 @@
-#Queries
+#查询
 
-## CREATE DATABASE
+## 创建数据库
 
-Creating db_name databases
+创建 db_name 数据库
 
 ```sql
 CREATE DATABASE [IF NOT EXISTS] db_name
 ```
 
-`A database` is just a directory for tables.
-If `IF NOT EXISTS` is included, the query won't return an error if the database already exists.
+`一个数据库` 是表的一个目录.
+如果包含 `IF NOT EXISTS`, 如果数据库已经存在, 查询不返回错误.
 
-## CREATE TABLE
+## 创建表
 
-The `CREATE TABLE` query can have several forms.
+`CREATE TABLE` 查询有一些形式.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name [ON CLUSTER cluster]
@@ -24,86 +24,86 @@ CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name [ON CLUSTER cluster]
 ) ENGINE = engine
 ```
 
-Creates a table named 'name' in the 'db' database or the current database if 'db' is not set, with the structure specified in brackets and the 'engine' engine.
-The structure of the table is a list of column descriptions. If indexes are supported by the engine, they are indicated as parameters for the table engine.
+创建一个表名称为 'name' 在 'db' 数据库中或者当前数据库,如果'db' 没有被设置, 其结构指定在 brackets 和 'engine' 引擎中.
+表结构是列描述的一个列表. 如果引擎支持索引, 对于表引擎来说, 他们被提示作为参数.
 
-A column description is `name type` in the simplest case. Example: `RegionID UInt32`.
-Expressions can also be defined for default values (see below).
+在最简单的情况下, 一个列的描述符是 `name type`. 例如: `RegionID UInt32`.
+表达式也能够为默认值定义.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name AS [db2.]name2 [ENGINE = engine]
 ```
 
-Creates a table with the same structure as another table. You can specify a different engine for the table. If the engine is not specified, the same engine will be used as for the `db2.name2` table.
+用另外一个表的结构创建表. 你能够为表指定不同的引擎. 如果引擎没有被指定, 相同的引擎将被应用于 `db2.name2` 表.
 
 ```sql
 CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db.]name ENGINE = engine AS SELECT ...
 ```
 
-Creates a table with a structure like the result of the `SELECT` query, with the 'engine' engine, and fills it with data from SELECT.
+创建一个带有`SELECT`查询结果类似结构的表, 带有 'engine' 引擎, 同时从SELECT中添加数据.
 
-In all cases, if `IF NOT EXISTS` is specified, the query won't return an error if the table already exists. In this case, the query won't do anything.
+在所有的情况下, 如果 `IF NOT EXISTS` 被指定, 查询不返回错误, 如果表已经存在. 在这种情况下, 此查询不做任何事情.
 
-### Default values
+### 默认值
 
-The column description can specify an expression for a default value, in one of the following ways:`DEFAULT expr`, `MATERIALIZED expr`, `ALIAS expr`.
-Example: `URLDomain String DEFAULT domain(URL)`.
+列描述符能够为默认值指定一个表达式, 可以使用下列方法:`DEFAULT expr`, `MATERIALIZED expr`, `ALIAS expr`.
+示例: `URLDomain String DEFAULT domain(URL)`.
 
-If an expression for the default value is not defined, the default values will be set to zeros for numbers, empty strings for strings, empty arrays for arrays, and `0000-00-00` for dates or `0000-00-00 00:00:00` for dates with time. NULLs are not supported.
+如果对默认值的表达式没有被定义, 默认值将被设置为0(数字), 空字符串(字符), 空数组(数组), 和 `0000-00-00`(日期) 或者 `0000-00-00 00:00:00` (日期). NULLs值不被支持.
 
-If the default expression is defined, the column type is optional. If there isn't an explicitly defined type, the default expression type is used. Example: `EventDate DEFAULT toDate(EventTime)` – the 'Date' type will be used for the 'EventDate' column.
+如果默认表达式被定义, 列类型是可选的. 如果没有一个明确的定义类型, 默认表达式类型被使用. 示例: `EventDate DEFAULT toDate(EventTime)` –  'Date' 类型将被用在'EventDate' 列上.
 
-If the data type and default expression are defined explicitly, this expression will be cast to the specified type using type casting functions. Example: `Hits UInt32 DEFAULT 0` means the same thing as `Hits UInt32 DEFAULT toUInt32(0)`.
+如果数据类型和默认的表达式被明确定义出来, 此表达式将被转换到指定的类型(使用类型转换函数). 示例: `Hits UInt32 DEFAULT 0` 与 `Hits UInt32 DEFAULT toUInt32(0)`意思相同.
 
-Default expressions may be defined as an arbitrary expression from table constants and columns. When creating and changing the table structure, it checks that expressions don't contain loops. For INSERT, it checks that expressions are resolvable – that all columns they can be calculated from have been passed.
+默认表达式能够被定义作为一个任意的表达式, 从表的常量和列中. 当创建和更改表结构时, 它将检查表达式不包含循环. 对于INSERT操作, 它检查了表达式是可解析的 – 能够计算所有传递进去的列.
 
 `DEFAULT expr`
 
-Normal default value. If the INSERT query doesn't specify the corresponding column, it will be filled in by computing the corresponding expression.
+正常默认值. 如果 INSERT 查询并不指定对应的列, 它将通过计算对应的表达式来填充.
 
 `MATERIALIZED expr`
 
-Materialized expression. Such a column can't be specified for INSERT, because it is always calculated.
-For an INSERT without a list of columns, these columns are not considered.
-In addition, this column is not substituted when using an asterisk in a SELECT query. This is to preserve the invariant that the dump obtained using `SELECT *` can be inserted back into the table using INSERT without specifying the list of columns.
+物化表达式. 这样一个列不能被指定到INSERT操作中, 因为它经常被计算.
+对于一个INSERT操作来说,没有一个列的列表, 这些列将不被考虑.
+另外, 此列不能被替换,当在SELECT语句中使用*号时. 这个将保证不可变性, 获得的 dump 使用 `SELECT *` 插回到表中, 使用 INSERT不能指定列的列表.
 
 `ALIAS expr`
 
-Synonym. Such a column isn't stored in the table at all.
-Its values can't be inserted in a table, and it is not substituted when using an asterisk in a SELECT query.
-It can be used in SELECTs if the alias is expanded during query parsing.
+近义词. 这样的列根本不在表中保存.
+它的值不插入到表中, 同时它没有被替换, 当在SELECT查询中使用*号时.
+如果昵称在查询解析时被扩展, 它能够被用在 SELECTs 中.
 
-When using the ALTER query to add new columns, old data for these columns is not written. Instead, when reading old data that does not have values for the new columns, expressions are computed on the fly by default. However, if running the expressions requires different columns that are not indicated in the query, these columns will additionally be read, but only for the blocks of data that need it.
+当使用 ALTER 查询时添加新的列, 这些列中旧的数据不会被写. 相反, 当读取旧的数据时, 新列没有值, 表达式默认情况下是被计算. 然而, 如果运行表达式需要不同的列, 列没有在查询中提示, 这些列将被额外读取, 但是仅对于需要它的数据块.
 
-If you add a new column to a table but later change its default expression, the values used for old data will change (for data where values were not stored on the disk). Note that when running background merges, data for columns that are missing in one of the merging parts is written to the merged part.
+如果你添加新列到一个表中, 但是又改变了它的默认表达式, 此值所使用的旧值将被改变 (此值并不保存在磁盘上). 注意:当运行 Merge 北京线程时, 对于丢失正在合并部分的列的数据 被写到已经合并的部分.
 
-It is not possible to set default values for elements in nested data structures.
+在嵌套的数据结构中, 不可能设置默认值.
 
-### Temporary tables
+### 临时表
 
-In all cases, if `TEMPORARY` is specified, a temporary table will be created. Temporary tables have the following characteristics:
+在所有情况下, 如果 `TEMPORARY` 被指定, 一个临时表将被创建. 临时表有如下的特性:
 
-- Temporary tables disappear when the session ends, including if the connection is lost.
-- A temporary table is created with the Memory engine. The other table engines are not supported.
-- The DB can't be specified for a temporary table. It is created outside of databases.
-- If a temporary table has the same name as another one and a query specifies the table name without specifying the DB, the temporary table will be used.
-- For distributed query processing, temporary tables used in a query are passed to remote servers.
+- 当 session 结束时, 临时表消失, 包括连接丢失.
+- 一个临时表用Memory引擎被创建. 其他表引擎不被支持.
+- 对于一个临时表, DB 不能被指定. 它被创建在数据库之外.
+- 如果一个临时表与另外的表名称相同, 同时一个查询指定表名, 不指定DB, 临时表将被使用.
+- 对于分布式查询处理, 查询中使用的临时表被传递给远程服务器.
 
-In most cases, temporary tables are not created manually, but when using external data for a query, or for distributed `(GLOBAL) IN`. For more information, see the appropriate sections
+在大多数情况下, 临时表不是手工创建, 而是使用外表查询, 或者是分布式 `(GLOBAL) IN` 时. 对于更多信息, 查看章节
 
-Distributed DDL queries (ON CLUSTER clause)
+分布式 DDL 查询 (ON CLUSTER 语句)
 ----------------------------------------------
 
-The `CREATE`, `DROP`, `ALTER`, and `RENAME` queries support distributed execution on a cluster.
-For example, the following query creates the `all_hits` `Distributed` table on each host in `cluster`:
+`CREATE`, `DROP`, `ALTER`, 和 `RENAME` 查询支持在集群中分布式执行.
+例如, 如下的查询创建了 `all_hits` `Distributed` 表, 在每个主机中的 `cluster`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS all_hits ON CLUSTER cluster (p Date, i Int32) ENGINE = Distributed(cluster, default, hits)
 ```
 
-In order to run these queries correctly, each host must have the same cluster definition (to simplify syncing configs, you can use substitutions from ZooKeeper). They must also connect to the ZooKeeper servers.
-The local version of the query will eventually be implemented on each host in the cluster, even if some hosts are currently not available. The order for executing queries within a single host is guaranteed.
-` ALTER` queries are not yet supported for replicated tables.
+为了正确地运行这些查询, 每个主机必须有相同的集群定义 (为了简化同步配置, 你能够从ZooKeeper进行订阅). 他们也必须连接到ZooKeeper 服务器上.
+查询的本地版本将最终在集群的每台机器上被实现, 即使一些主机当前是不可用的. 在单个主机内的执行查询顺序是有保障的.
+` ALTER` 查询对于复制表来说还不支持.
 
 ## CREATE VIEW
 
@@ -111,133 +111,133 @@ The local version of the query will eventually be implemented on each host in th
 CREATE [MATERIALIZED] VIEW [IF NOT EXISTS] [db.]name [TO[db.]name] [ENGINE = engine] [POPULATE] AS SELECT ...
 ```
 
-Creates a view. There are two types of views: normal and MATERIALIZED.
+创建一个视图. 有2中类型的视图: Normal 和 MATERIALIZED.
 
-When creating a materialized view, you must specify ENGINE – the table engine for storing data.
+当创建一个物化视图时, 你必须指定 ENGINE – 对于存储数据的表引擎.
 
-A materialized view works as follows: when inserting data to the table specified in SELECT, part of the inserted data is converted by this SELECT query, and the result is inserted in the view.
+一个物化视图工作如下: 当使用SELECT插入数据到表中时, 插入数据的部分通过SELECT查询被转化, 同时结果被插入到视图中.
 
-Normal views don't store any data, but just perform a read from another table. In other words, a normal view is nothing more than a saved query. When reading from a view, this saved query is used as a subquery in the FROM clause.
+Normal视图不存储任何数据, 但是从另外一个表中执行一个读操作. 换句话说, 一个normal视图不比一个保存的查询多. 当从一个视图中读取时, 这个保存的查询被用于作为FROM语句中的一个子查询.
 
-As an example, assume you've created a view:
+作为一个示例, 假设你已经创建了一个视图:
 
 ```sql
 CREATE VIEW view AS SELECT ...
 ```
 
-and written a query:
+同时写到一个查询中:
 
 ```sql
 SELECT a, b, c FROM view
 ```
 
-This query is fully equivalent to using the subquery:
+此查询最终与使用子查询等价:
 
 ```sql
 SELECT a, b, c FROM (SELECT ...)
 ```
 
-Materialized views store data transformed by the corresponding SELECT query.
+物化视图保存数据通过对应的SELECT查询来转换.
 
-When creating a materialized view, you must specify ENGINE – the table engine for storing data.
+当创建一个物化视图时, 你必须指定 ENGINE – 保存数据的表引擎.
 
-A materialized view is arranged as follows: when inserting data to the table specified in SELECT, part of the inserted data is converted by this SELECT query, and the result is inserted in the view.
+一个物化视图被安排如下: 当插入数据到指定SELECT的表中时, 插入数据的部分通过SELECT查询来转化, 同时结果被插入到视图中.
 
-If you specify POPULATE, the existing table data is inserted in the view when creating it, as if making a `CREATE TABLE ... AS SELECT ...` . Otherwise, the query contains only the data inserted in the table after creating the view. We don't recommend using POPULATE, since data inserted in the table during the view creation will not be inserted in it.
+如果你指定了POPULATE, 当它创建时, 现有的表数据被插入到视图中, 好像进行了一个 `CREATE TABLE ... AS SELECT ...` . 否则, 在创建视图之后, 此查询仅包含插入在表中的数据. 我们不推荐使用 POPULATE, 在创建视图过程中插入到表中的数据不插入到视图中.
 
-A `SELECT` query can contain `DISTINCT`, `GROUP BY`, `ORDER BY`, `LIMIT`... Note that the corresponding conversions are performed independently on each block of inserted data. For example, if `GROUP BY` is set, data is aggregated during insertion, but only within a single packet of inserted data. The data won't be further aggregated. The exception is when using an ENGINE that independently performs data aggregation, such as `SummingMergeTree`.
+一个 `SELECT` 查询能够包含 `DISTINCT`, `GROUP BY`, `ORDER BY`, `LIMIT`... 注意: 对应的转换独立地在每个插入数据的数据块中执行. 例如, 如果 `GROUP BY` 被设置, 数据在插入时就进行聚合, 但是仅在单个插入的数据包中. 数据并不进一步聚合. 此异常是当使用一个ENGINE引擎时, 独立运行数据聚合, 例如 `SummingMergeTree`.
 
-The execution of `ALTER` queries on materialized views has not been fully developed, so they might be inconvenient. If the materialized view uses the construction ``TO [db.]name``, you can ``DETACH`` the view, run ``ALTER`` for the target table, and then ``ATTACH`` the previously detached (``DETACH``) view.
+在物化视图的 `ALTER` 查询执行上正在开发中, 因此他们使用上不是特别方便. 如果物化视图使用结构 ``TO [db.]name``, 你能够 ``DETACH`` 此视图, 在目标表中运行 ``ALTER``, 然后 ``ATTACH`` 之前卸载的 (``DETACH``) 视图.
 
-Views look the same as normal tables. For example, they are listed in the result of the `SHOW TABLES` query.
+视图看起来与正常表一样. 例如, 他们以`SHOW TABLES`查询的结果被列出.
 
-There isn't a separate query for deleting views. To delete a view, use `DROP TABLE`.
+在删除视图方面，没有另外的语句. 如果要删除视图, 则使用 `DROP TABLE`.
 
-## ATTACH
+## 挂载
 
-This query is exactly the same as `CREATE`, but
+此查询与`CREATE`相同, 但是
 
-- instead of the word `CREATE` it uses the word `ATTACH`.
-- The query doesn't create data on the disk, but assumes that data is already in the appropriate places, and just adds information about the table to the server.
-After executing an ATTACH query, the server will know about the existence of the table.
+- 并没有使用`CREATE` 关键字, 而是使用了`ATTACH`.
+- 此查询并不在磁盘上创建数据, 而是假设数据已经在指定的位置, 仅是添加有关表的信息到服务器中.
+当执行 ATTACH 查询之后, 服务器将知道表的存在.
 
-If the table was previously detached (``DETACH``), meaning that its structure is known, you can use shorthand without defining the structure.
+如果表在之前执行了`DETACH`, 这意味着此结构是已知的, 你能够使用没有定义结构的简写.
 
 ```sql
 ATTACH TABLE [IF NOT EXISTS] [db.]name
 ```
 
-This query is used when starting the server. The server stores table metadata as files with `ATTACH` queries, which it simply runs at launch (with the exception of system tables, which are explicitly created on the server).
+此查询在启动服务器时被执行. 服务器保存了表的元数据作为带有`ATTACH`查询的文件, 它直接运行在启动时(在服务器上创建).
 
 ## DROP
 
-This query has two types: `DROP DATABASE`  and `DROP TABLE`.
+此查询有2种类型: `DROP DATABASE` 和 `DROP TABLE`.
 
 ```sql
 DROP DATABASE [IF EXISTS] db [ON CLUSTER cluster]
 ```
 
-Deletes all tables inside the 'db' database, then deletes the 'db' database itself.
-If `IF EXISTS` is specified, it doesn't return an error if the database doesn't exist.
+删除'db'数据库内所有的表, 然后删除'db'自己.
+如果 `IF EXISTS` 被指定, 如果此数据库不存在, 它不返回错误.
 
 ```sql
 DROP TABLE [IF EXISTS] [db.]name [ON CLUSTER cluster]
 ```
 
-Deletes the table.
-If `IF EXISTS` is specified, it doesn't return an error if the table doesn't exist or the database doesn't exist.
+删除此表.
+如果 `IF EXISTS` 被指定, 它不返回一个错误, 如果此表不存在或者数据库不存在.
 
 ## DETACH
 
-Deletes information about the 'name' table from the server. The server stops knowing about the table's existence.
+删除服务器中有关'name' 表中的信息. 然后服务器不知道有此表的存在.
 
 ```sql
 DETACH TABLE [IF EXISTS] [db.]name
 ```
 
-This does not delete the table's data or metadata. On the next server launch, the server will read the metadata and find out about the table again.
-Similarly, a "detached" table can be re-attached using the `ATTACH` query (with the exception of system tables, which do not have metadata stored for them).
+它不删除表的数据或元数据. 在下一次服务器启动时, 服务器将读取元数据, 再次找到此表.
+与之类似, 使用`ATTACH`查询, 一个 "detached" 表能够被重新挂载 (除了系统表, 它没有元数据存储).
 
-There is no `DETACH DATABASE` query.
+注意, 没有 `DETACH DATABASE` 语句.
 
-## RENAME
+## 重命名
 
-Renames one or more tables.
+重命名一个或多个表.
 
 ```sql
 RENAME TABLE [db11.]name11 TO [db12.]name12, [db21.]name21 TO [db22.]name22, ... [ON CLUSTER cluster]
 ```
 
-All tables are renamed under global locking. Renaming tables is a light operation. If you indicated another database after TO, the table will be moved to this database. However, the directories with databases must reside in the same file system (otherwise, an error is returned).
+所有的表都在全局锁下进行重命名. 重命名表是一个轻操作. 如果你在TO之后提示另外一个数据库, 此表将移动到此数据库中. 然而, 带有数据库的目录必须在相同的文件系统内 (否则, 将发生错误).
 
 <a name="query_language_queries_alter"></a>
 
-## ALTER
+## 更新
 
-The `ALTER` query is only supported for `*MergeTree` tables, as well as `Merge`and`Distributed`. The query has several variations.
+目前 `ALTER` 语句仅支持 `*MergeTree` 表, `Merge` 和 `Distributed`. 此查询有一些变种版本.
 
-### Column manipulations
+### 列操作
 
-Changing the table structure.
+更新表结构.
 
 ```sql
 ALTER TABLE [db].name [ON CLUSTER cluster] ADD|DROP|MODIFY COLUMN ...
 ```
 
-In the query, specify a list of one or more comma-separated actions.
-Each action is an operation on a column.
+在查询中, 指定一个或多个逗号分隔动作的列表.
+每一个动作都是在一个列上的操作.
 
-The following actions are supported:
+如下的动作支持:
 
 ```sql
 ADD COLUMN name [type] [default_expr] [AFTER name_after]
 ```
 
-Adds a new column to the table with the specified name, type, and `default_expr` (see the section "Default expressions"). If you specify `AFTER name_after` (the name of another column), the column is added after the specified one in the list of table columns. Otherwise, the column is added to the end of the table. Note that there is no way to add a column to the beginning of a table. For a chain of actions, 'name_after' can be the name of a column that is added in one of the previous actions.
+添加一个新的列到特定名称、类型和 `default_expr`的表中 (查询章节 "默认表达式"). 如果你指定了 `AFTER name_after` (另一个列的名称), 列被添加到指定字段之后. 否则, 列被添加到表的末尾. 注意目前没有方法可以添加列到表的开头. 一系列动作时候, 'name_after' 是一个列的名称, 此列被添加到之前的动作上.
 
-Adding a column just changes the table structure, without performing any actions with data. The data doesn't appear on the disk after ALTER. If the data is missing for a column when reading from the table, it is filled in with default values (by performing the default expression if there is one, or using zeros or empty strings). If the data is missing for a column when reading from the table, it is filled in with default values (by performing the default expression if there is one, or using zeros or empty strings). The column appears on the disk after merging data parts (see MergeTree).
+添加一个新列即可改变列的结构, 在执行动作之前. 在ALTER之后, 此数据并没有出现在磁盘上. 当从表中读取数据时, 如果数据丢失, 它使用默认值填充 (如果有1,执行默认表达式, 或者使用0或空字符串). 对于一个字段, 当从表中读取数据时, 如果数据为空, 它使用默认值填充 (如果有1,执行默认表达式, 或者使用0或空字符串). 在合并数据块后, 字段出现在磁盘上，(请查看 MergeTree).
 
-This approach allows us to complete the ALTER query instantly, without increasing the volume of old data.
+此方法允许我们完成 ALTER 查询, 不需要增加旧数据的数据量.
 
 ```sql
 DROP COLUMN name
@@ -955,47 +955,65 @@ The query can only specify a single ARRAY JOIN clause.
 
 The corresponding conversion can be performed before the WHERE/PREWHERE clause (if its result is needed in this clause), or after completing WHERE/PREWHERE (to reduce the volume of calculations).
 
-### JOIN clause
+### JOIN 语句
 
-The normal JOIN, which is not related to ARRAY JOIN described above.
+JOIN标准语句, 与ARRAY JOIN 关系不大.
 
-```sql
+
+
 [GLOBAL] ANY|ALL INNER|LEFT [OUTER] JOIN (subquery)|table USING columns_list
-```
+在子查询中执行JOIN查询. 在查询处理开始时, 子查询在 JOIN 以后指定, 他的结果保存在内存中. 然后从指定在FROM语句中的"左关联" 表中读取, 在读取过程中, 对于从"左关联" 表中读取的每行记录, 和从子查询结果("右关联")表中查询的数据满足USING中的匹配条件.
 
-Performs joins with data from the subquery. At the beginning of query processing, the subquery specified after JOIN is run, and its result is saved in memory. Then it is read from the "left" table specified in the FROM clause, and while it is being read, for each of the read rows from the "left" table, rows are selected from the subquery results table (the "right" table) that meet the condition for matching the values of the columns specified in USING.
 
-The table name can be specified instead of a subquery. This is equivalent to the `SELECT * FROM table` subquery, except in a special case when the table has the Join engine – an array prepared for joining.
 
-All columns that are not needed for the JOIN are deleted from the subquery.
+表名能够被指定来替代子查询. 这等于SELECT * FROM table subquery, 在特定情况下，当表有Join 引擎时 – 一个数组准备 join.
 
-There are several types of JOINs:
 
-`INNER` or `LEFT` type:
-If INNER is specified, the result will contain only those rows that have a matching row in the right table.
-If LEFT is specified, any rows in the left table that don't have matching rows in the right table will be assigned the default value - zeros or empty rows. LEFT OUTER may be written instead of LEFT; the word OUTER does not affect anything.
 
-`ANY` or `ALL` stringency:If `ANY` is specified and the right table has several matching rows, only the first one found is joined.
-If `ALL` is specified and the right table has several matching rows, the data will be multiplied by the number of these rows.
+在JOIN中所有的列如果不需要，则从子查询中删除.
 
-Using ALL corresponds to the normal JOIN semantic from standard SQL.
-Using ANY is optimal. If the right table has only one matching row, the results of ANY and ALL are the same. You must specify either ANY or ALL (neither of them is selected by default).
 
-`GLOBAL` distribution:
+有如下几种类型的JOIN:
 
-When using a normal JOIN, the query is sent to remote servers. Subqueries are run on each of them in order to make the right table, and the join is performed with this table. In other words, the right table is formed on each server separately.
 
-When using `GLOBAL ... JOIN`, first the requestor server runs a subquery to calculate the right table. This temporary table is passed to each remote server, and queries are run on them using the temporary data that was transmitted.
+INNER 或 LEFT 类型: 如果 INNER 被指定，结果仅包含这些行，在右表中匹配的行. 如果 LEFT 被指定，任何在左表中的行没有匹配右表中的行都将被分配默认值 - zeros or empty rows. LEFT OUTER 可以被写来替代LEFT; OUTER 不影响任何事情。
 
-Be careful when using GLOBAL JOINs. For more information, see the section "Distributed subqueries".
 
-Any combination of JOINs is possible. For example, `GLOBAL ANY LEFT OUTER JOIN`.
 
-When running a JOIN, there is no optimization of the order of execution in relation to other stages of the query. The join (a search in the right table) is run before filtering in WHERE and before aggregation. In order to explicitly set the processing order, we recommend running a JOIN subquery with a subquery.
+ANY 或 ALL 字符串: 如果ANY 被指定和右表有一些匹配的行，只有第一行发现被Join，. 如果 ALL 被指定，右表有一些匹配的行，数据将按照行数相乘.
 
-Example:
 
-```sql
+
+使用 ALL 对应的 JOIN 语义. 使用ANY 是最优的. 如果右表仅有一个匹配行, ANY 和 ALL 的结果是相同的. 你必须指定 ANY 或 ALL (默认情况下，2个都不选择).
+
+
+
+GLOBAL 分布:
+
+
+
+当使用 JOIN语句, 查询将被发送至远程服务器. 子查询将被运行在每个节点上，为了让右表和JOIN查询运行在此表上. 换句话说, 右表单独运行在每个服务器上.
+
+
+
+当使用 GLOBAL ... JOIN, 首先 请求服务器运行子查询来计算右表. 此临时表被传递到每个远程服务器, 查询运行在临时表上.
+
+
+
+当使用 GLOBAL JOINs时需要小心. 更多信息, 请查看章节 "分布式子查询".
+
+
+
+任意的JOINs都是有可能的. 例如, GLOBAL ANY LEFT OUTER JOIN.
+
+
+
+当运行一个 JOIN时, 执行顺序没有优化，和其他的查询阶段相比. Join在WHERE过滤之前和聚合之前被执行. 为了设置处理顺序, 我们推荐在一个子查询里运行一个JOIN子查询.
+
+
+
+示例:
+
 SELECT
     CounterID,
     hits,
@@ -1017,9 +1035,6 @@ FROM
 ) USING CounterID
 ORDER BY hits DESC
 LIMIT 10
-```
-
-```text
 ┌─CounterID─┬───hits─┬─visits─┐
 │   1143050 │ 523264 │  13665 │
 │    731962 │ 475698 │ 102716 │
@@ -1032,58 +1047,68 @@ LIMIT 10
 │  19762435 │  77807 │   7026 │
 │    722884 │  77492 │  11056 │
 └───────────┴────────┴────────┘
-```
 
-Subqueries don't allow you to set names or use them for referencing a column from a specific subquery.
-The columns specified in USING must have the same names in both subqueries, and the other columns must be named differently. You can use aliases to change the names of columns in subqueries (the example uses the aliases 'hits' and 'visits').
+子查询不允许你设置名称或使用他们，对于从一个特定的查询中引用一个列. 指定在 USING 中的列必须在两个子查询中都有相同的名字, 其他的列必须单独命名. 在子查询中你可以使用别名来更改列的名称，和在子查询中的列 (例如别名使用 'hits' 和 'visits').
 
-The USING clause specifies one or more columns to join, which establishes the equality of these columns. The list of columns is set without brackets. More complex join conditions are not supported.
 
-The right table (the subquery result) resides in RAM. If there isn't enough memory, you can't run a JOIN.
 
-Only one JOIN can be specified in a query (on a single level). To run multiple JOINs, you can put them in subqueries.
+USING 语句指定一个或多个列进行Join, 建立这些列的等值列. 列的列表被设置不需要brackets. 因此不支持复杂JOIN条件.
 
-Each time a query is run with the same JOIN, the subquery is run again – the result is not cached. To avoid this, use the special 'Join' table engine, which is a prepared array for joining that is always in RAM. For more information, see the section "Table engines, Join".
 
-In some cases, it is more efficient to use IN instead of JOIN.
-Among the various types of JOINs, the most efficient is ANY LEFT JOIN, then ANY INNER JOIN. The least efficient are ALL LEFT JOIN and ALL INNER JOIN.
 
-If you need a JOIN for joining with dimension tables (these are relatively small tables that contain dimension properties, such as names for advertising campaigns), a JOIN might not be very convenient due to the bulky syntax and the fact that the right table is re-accessed for every query. For such cases, there is an "external dictionaries" feature that you should use instead of JOIN. For more information, see the section "External dictionaries".
+右表 (子查询结果) 驻留在内存中. If 如果没有足够的内存，也不能运行 JOIN.
 
-### WHERE clause
 
-If there is a WHERE clause, it must contain an expression with the UInt8 type. This is usually an expression with comparison and logical operators.
-This expression will be used for filtering data before all other transformations.
 
-If indexes are supported by the database table engine, the expression is evaluated on the ability to use indexes.
+仅有一个JOIN 能够被指定在一个查询中. 为了运行多个 JOINs, 你能够放它们在子查询中.
 
-### PREWHERE clause
 
-This clause has the same meaning as the WHERE clause. The difference is in which data is read from the table.
-When using PREWHERE, first only the columns necessary for executing PREWHERE are read. Then the other columns are read that are needed for running the query, but only those blocks where the PREWHERE expression is true.
 
-It makes sense to use PREWHERE if there are filtration conditions that are not suitable for indexes that are used by a minority of the columns in the query, but that provide strong data filtration. This reduces the volume of data to read.
+每次一个查询运行相同的 JOIN, 子查询再次运行 – 结果不被缓存. 为了避免这个, 使用特定的'Join' 表引擎, 它是一个预处理数组，在内存中进行join操作. 对于更多信息, 请查看章节 "表引擎, Join".
 
-For example, it is useful to write PREWHERE for queries that extract a large number of columns, but that only have filtration for a few columns.
 
-PREWHERE is only supported by tables from the `*MergeTree` family.
 
-A query may simultaneously specify PREWHERE and WHERE. In this case, PREWHERE precedes WHERE.
+在一些情况下，使用 IN 语句比 JOIN 效率更高。在不同类型的JOIN查询下，最高效的是ANY LEFT JOIN，其次是ANY INNER JOIN，最后是ALL LEFT JOIN 和 ALL INNER JOIN.
 
-Keep in mind that it does not make much sense for PREWHERE to only specify those columns that have an index, because when using an index, only the data blocks that match the index are read.
+如果你想要一个JOIN 来关联维度表 (这些是一些小表，包含维度属性, 如营销活动的名称), 一个 JOIN 可能并不是特别合适，由于 bulky 的语句，右表对于每个查询重新访问. 在这些场景下, 有一个 "外部字典" 特性，你应该使用它来替换 JOIN. 更多信息, 请查看章节 "外部字典".
 
-If the 'optimize_move_to_prewhere' setting is set to 1 and PREWHERE is omitted, the system uses heuristics to automatically move parts of expressions from WHERE to PREWHERE.
 
-### GROUP BY clause
 
-This is one of the most important parts of a column-oriented DBMS.
+### WHERE 语句
 
-If there is a GROUP BY clause, it must contain a list of expressions. Each expression will be referred to here as a "key".
-All the expressions in the SELECT, HAVING, and ORDER BY clauses must be calculated from keys or from aggregate functions. In other words, each column selected from the table must be used either in keys or inside aggregate functions.
+如果有一个 WHERE 语句, 它必须包含一个带有UInt8类型的表达式. 通常情况下是带有比较和逻辑操作符的表达式.
+此表达式将被用于在所有其他转换之前过滤数据.
 
-If a query contains only table columns inside aggregate functions, the GROUP BY clause can be omitted, and aggregation by an empty set of keys is assumed.
+如果数据库表引擎支持索引, 表达式使用索引来评估.
 
-Example:
+### PREWHERE 语句
+
+此语句与WHERE语句效果相同. 主要区别是数据从表中读取.
+当使用 PREWHERE 时, 首先, 只有执行PREWHERE语句的列被读取. 然后, 其他列在运行query查询时被读取, 只读取当PREWHERE表达式为 ture时这些数据块.
+
+如果有过滤条件, 不适合索引, 使用PREWHERE是有意义的, 在查询中被用于少数列, 但是提供了一个很强有力的数据过滤. 这减少了数据量的读取.
+
+例如, 使用PREWHERE进行抽取大量的列是有非常有用的, 但是仅为一些列进行过滤.
+
+PREWHERE 仅被`*MergeTree`表引擎家族支持.
+
+一个查询可能同时指定 PREWHERE 和 WHERE. 在这种情况下, PREWHERE 优先于 WHERE.
+
+切记, 对于PREWHERE来说, 仅指定有索引的列并没有太大意义, 因为当你使用一个索引, 仅有匹配索引的数据块被读取.
+
+如果 'optimize_move_to_prewhere' 设置被设为1, 同时 PREWHERE 被忽略, 此系统使用启发式自动从WHERE到PREWHERE 移动表达式的部分.
+
+### GROUP BY 语句
+
+这是列式DBMS最重要的部分.
+
+如果有一个 GROUP BY 语句, 它必包含一个表达式列表. 每个表达式将被引用作为一个"key".
+在SELECT, HAVING, 和 ORDER BY 语句中的所有的表达式必须从 keys 中或aggregate函数中被计算. 换句话说, 从表中查询出来的列必须被用在 keys 或在 aggregate 函数中.
+
+如果一个查询仅包含表的列在aggregate函数中, GROUP BY 语句能够忽略, 同时假设通过一个keys的空集合进行聚合.
+
+示例:
+
 
 ```sql
 SELECT
