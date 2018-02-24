@@ -214,30 +214,30 @@ RENAME TABLE [db11.]name11 TO [db12.]name12, [db21.]name21 TO [db22.]name22, ...
 
 ## 更新
 
-The `ALTER` query is only supported for `*MergeTree` tables, as well as `Merge`and`Distributed`. The query has several variations.
+目前 `ALTER` 语句仅支持 `*MergeTree` 表, `Merge` 和 `Distributed`. 此查询有一些变种版本.
 
-### Column manipulations
+### 列操作
 
-Changing the table structure.
+更新表结构.
 
 ```sql
 ALTER TABLE [db].name [ON CLUSTER cluster] ADD|DROP|MODIFY COLUMN ...
 ```
 
-In the query, specify a list of one or more comma-separated actions.
-Each action is an operation on a column.
+在查询中, 指定一个或多个逗号分隔动作的列表.
+每一个动作都是在一个列上的操作.
 
-The following actions are supported:
+如下的动作支持:
 
 ```sql
 ADD COLUMN name [type] [default_expr] [AFTER name_after]
 ```
 
-Adds a new column to the table with the specified name, type, and `default_expr` (see the section "Default expressions"). If you specify `AFTER name_after` (the name of another column), the column is added after the specified one in the list of table columns. Otherwise, the column is added to the end of the table. Note that there is no way to add a column to the beginning of a table. For a chain of actions, 'name_after' can be the name of a column that is added in one of the previous actions.
+添加一个新的列到特定名称、类型和 `default_expr`的表中 (查询章节 "默认表达式"). 如果你指定了 `AFTER name_after` (另一个列的名称), 列被添加到指定字段之后. 否则, 列被添加到表的末尾. 注意目前没有方法可以添加列到表的开头. 一系列动作时候, 'name_after' 是一个列的名称, 此列被添加到之前的动作上.
 
-Adding a column just changes the table structure, without performing any actions with data. The data doesn't appear on the disk after ALTER. If the data is missing for a column when reading from the table, it is filled in with default values (by performing the default expression if there is one, or using zeros or empty strings). If the data is missing for a column when reading from the table, it is filled in with default values (by performing the default expression if there is one, or using zeros or empty strings). The column appears on the disk after merging data parts (see MergeTree).
+添加一个新列即可改变列的结构, 在执行动作之前. 在ALTER之后, 此数据并没有出现在磁盘上. 当从表中读取数据时, 如果数据丢失, 它使用默认值填充 (如果有1,执行默认表达式, 或者使用0或空字符串). 对于一个字段, 当从表中读取数据时, 如果数据为空, 它使用默认值填充 (如果有1,执行默认表达式, 或者使用0或空字符串). 在合并数据块后, 字段出现在磁盘上，(请查看 MergeTree).
 
-This approach allows us to complete the ALTER query instantly, without increasing the volume of old data.
+此方法允许我们完成 ALTER 查询, 不需要增加旧数据的数据量.
 
 ```sql
 DROP COLUMN name
