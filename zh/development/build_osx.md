@@ -1,23 +1,24 @@
-# How to build ClickHouse on Mac OS X
+# 如何在 Mac OS X 编译 ClickHouse
 
-Build should work on Mac OS X 10.12. If you're using earlier version, you can try to build ClickHouse using Gentoo Prefix and clang sl in this instruction.
-With appropriate changes, it should also work on any other Linux distribution.
+可以在 Mac OS X 10.12 环境下编译。如果您使用的是早期版本，您可以尝试在本说明中使用 Gentoo Prefix 和 clang sl 构建 ClickHouse。
+经过适当的修改，它也可以在任何其他 Linux 发行版上运行。
 
-## Install Homebrew
+
+## 安装 Homebrew
 
 ```bash
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 ```
 
-## Install required compilers, tools, and libraries
+## 安装所需的编译器，工具，类库
 
 ```bash
 brew install cmake gcc icu4c mysql openssl unixodbc libtool gettext homebrew/dupes/zlib readline boost --cc=gcc-7
 ```
 
-## Checkout ClickHouse sources
+## 拉取 ClickHouse 源码
 
-To get the latest stable version:
+为了获取到 ClickHouse 源码的最新稳定版本：
 
 ```bash
 git clone -b stable --recursive --depth=10 git@github.com:yandex/ClickHouse.git
@@ -26,10 +27,10 @@ git clone -b stable --recursive --depth=10 git@github.com:yandex/ClickHouse.git
 cd ClickHouse
 ```
 
-For development, switch to the `master` branch.
-For the latest release candidate, switch to the `testing` branch.
+若为开发需要, 切换到 `master` 分支。
+若需要最新的候选版本，切换到 `testing` 分支。
 
-## Build ClickHouse
+## 编译 ClickHouse
 
 ```bash
 mkdir build
@@ -39,7 +40,7 @@ make -j `sysctl -n hw.ncpu`
 cd ..
 ```
 
-## Caveats
+## 警告
 
-If you intend to run clickhouse-server, make sure to increase the system's maxfiles variable. See [MacOS.md](https://github.com/yandex/ClickHouse/blob/master/MacOS.md) for more details.
+如果您打算运行 clickhouse-server，请确保增加系统的 `maxfiles` 变量。更多相关详细信息，请参见[MacOS.md](https://github.com/yandex/ClickHouse/blob/master/MacOS.md)。
 
