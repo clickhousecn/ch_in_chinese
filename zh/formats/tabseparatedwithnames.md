@@ -1,8 +1,8 @@
 # TabSeparatedWithNames
 
-Differs from the `TabSeparated` format in that the column names are written in the first row.
-During parsing, the first row is completely ignored. You can't use column names to determine their position or to check their correctness.
-(Support for parsing the header row may be added in the future.)
+与 `TabSeparated` 格式不一样的是，第一行会显示列的名称。
+在解析过程中，第一行完全被忽略。您不能使用列名来确定其位置或检查其正确性。
+（未来可能会加入解析头行的功能）
 
-This format is also available under the name ` TSVWithNames`.
+这种格式也可以使用名称 ` TSVWithNames` 来表示。
 

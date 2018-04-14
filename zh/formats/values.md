@@ -1,8 +1,8 @@
 # Values
 
-Prints every row in brackets. Rows are separated by commas. There is no comma after the last row. The values inside the brackets are also comma-separated. Numbers are output in decimal format without quotes. Arrays are output in square brackets. Strings, dates, and dates with times are output in quotes. Escaping rules and parsing are similar to the TabSeparated format. During formatting, extra spaces aren't inserted, but during parsing, they are allowed and skipped (except for spaces inside array values, which are not allowed).
+在括号中打印每一行。行由逗号分隔。最后一行之后没有逗号。括号内的值也用逗号分隔。数字以十进制格式输出，不含引号。 数组以方括号输出。带有时间的字符串，日期和时间用引号包围输出。转义字符的解析规则与 TabSeparated 格式类似。 在格式化过程中，不插入额外的空格，但在解析过程中，空格是被允许并跳过的（除了数组值之外的空格，这是不允许的）。
 
-The minimum set of characters that you need to escape when passing data in Values ​​format: single quotes and backslashes.
+以数值格式传递数据时需要转义的最小字符集是：单引号和反斜线。
 
-This is the format that is used in `INSERT INTO t VALUES ...` but you can also use it for query result.
+这是 `INSERT INTO t VALUES ...` 中可以使用的格式，但您也可以将其用于查询结果。
 

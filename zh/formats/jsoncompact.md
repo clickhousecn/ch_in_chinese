@@ -1,8 +1,8 @@
 # JSONCompact
 
-Differs from JSON only in that data rows are output in arrays, not in objects.
+与 JSON 格式不同的是它以数组的方式输出结果，而不是以结构体。
 
-Example:
+示例:
 
 ```json
 {
@@ -41,6 +41,6 @@ Example:
 }
 ```
 
-This format is only appropriate for outputting a query result, but not for parsing (retrieving data to insert in a table).
-See also the `JSONEachRow` format.
+这种格式仅仅适用于输出结果集，而不适用于解析（将数据插入到表中）。
+参考 `JSONEachRow` 格式。
 

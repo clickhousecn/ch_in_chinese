@@ -1,5 +1,5 @@
 # Null
 
-Nothing is output. However, the query is processed, and when using the command-line client, data is transmitted to the client. This is used for tests, including productivity testing.
-Obviously, this format is only appropriate for output, not for parsing.
+没有输出。但是，查询已处理完毕，并且在使用命令行客户端时，数据将传输到客户端。这仅用于测试，包括生产力测试。
+显然，这种格式只适用于输出，不适用于解析。
 

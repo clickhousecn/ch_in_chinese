@@ -1,4 +1,4 @@
 # CSVWithNames
 
-Also prints the header row, similar to `TabSeparatedWithNames`.
+会输出带头部行，和 `TabSeparatedWithNames` 一样。
 

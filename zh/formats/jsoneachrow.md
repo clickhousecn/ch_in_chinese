@@ -1,6 +1,6 @@
 # JSONEachRow
 
-Outputs data as separate JSON objects for each row (newline delimited JSON).
+将数据结果每一行以 JSON 结构体输出（换行分割 JSON 结构体）。
 
 ```json
 {"SearchPhrase":"","count()":"8267016"}
@@ -15,7 +15,7 @@ Outputs data as separate JSON objects for each row (newline delimited JSON).
 {"SearchPhrase":"baku","count()":"1000"}
 ```
 
-Unlike the JSON format, there is no substitution of invalid UTF-8 sequences. Any set of bytes can be output in the rows. This is necessary so that data can be formatted without losing any information. Values are escaped in the same way as for JSON.
+与 JSON 格式不同的是，没有替换无效的UTF-8序列。任何一组字节都可以在行中输出。这是必要的，因为这样数据可以被格式化而不会丢失任何信息。值的转义方式与JSON相同。
 
-For parsing, any order is supported for the values of different columns. It is acceptable for some values to be omitted – they are treated as equal to their default values. In this case, zeros and blank rows are used as default values. Complex values that could be specified in the table are not supported as defaults. Whitespace between elements is ignored. If a comma is placed after the objects, it is ignored. Objects don't necessarily have to be separated by new lines.
+对于解析，任何顺序都支持不同列的值。可以省略某些值 - 它们被视为等于它们的默认值。在这种情况下，零和空行被用作默认值。 作为默认值，不支持表中指定的复杂值。元素之间的空白字符被忽略。如果在对象之后放置逗号，它将被忽略。对象不一定必须用新行分隔。
 

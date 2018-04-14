@@ -1,6 +1,6 @@
 # XML
 
-XML format is suitable only for output, not for parsing. Example:
+XML 格式仅适用于输出，不适用于解析，示例：
 
 ```xml
 <?xml version='1.0' encoding='UTF-8' ?>
@@ -64,10 +64,11 @@ XML format is suitable only for output, not for parsing. Example:
 </result>
 ```
 
-If the column name does not have an acceptable format, just 'field' is used as the element name. In general, the XML structure follows the JSON structure.
-Just as for JSON, invalid UTF-8 sequences are changed to the replacement character � so the output text will consist of valid UTF-8 sequences.
+如果列名称没有可接受的格式，则仅使用 `field` 作为元素名称。 通常，XML 结构遵循 JSON 结构。
+就像JSON一样，将无效的 UTF-8 字符都作替换，以便输出文本将包含有效的 UTF-8 字符序列。
 
-In string values, the characters `<` and `&` are escaped as `<` and `&`.
+在字符串值中，字符 `<` 和 `＆` 被转义为 `<` 和 `＆`。
 
-Arrays are output as `<array><elem>Hello</elem><elem>World</elem>...</array>`,and tuples as `<tuple><elem>Hello</elem><elem>World</elem>...</tuple>`.
+数组输出为 `<array> <elem> Hello </ elem> <elem> World </ elem> ... </ array>`，元组输出为 `<tuple> <elem> Hello </ elem> <elem>全球</ ELEM> ... </tuple>` 。
+
 

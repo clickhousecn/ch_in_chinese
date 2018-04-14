@@ -1,5 +1,4 @@
 # Vertical
 
-Prints each value on a separate line with the column name specified. This format is convenient for printing just one or a few rows, if each row consists of a large number of columns.
-This format is only appropriate for outputting a query result, but not for parsing (retrieving data to insert in a table).
-
+使用指定的列名在单独的行上打印每个值。如果每行都包含大量列，则此格式便于打印一行或几行。
+该格式仅适用于输出查询结果，但不适用于解析（将数据插入到表中）。

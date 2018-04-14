@@ -1,12 +1,12 @@
 # Pretty
 
-Outputs data as Unicode-art tables, also using ANSI-escape sequences for setting colors in the terminal.
-A full grid of the table is drawn, and each row occupies two lines in the terminal.
-Each result block is output as a separate table. This is necessary so that blocks can be output without buffering results (buffering would be necessary in order to pre-calculate the visible width of all the values).
-To avoid dumping too much data to the terminal, only the first 10,000 rows are printed. If the number of rows is greater than or equal to 10,000, the message "Showed first 10 000" is printed.
-This format is only appropriate for outputting a query result, but not for parsing (retrieving data to insert in a table).
+将数据以表格形式输出，也可以使用 ANSI 转义字符在终端中设置颜色。
+它会绘制一个完整的表格，每行数据在终端中占用两行。
+每一个结果块都会以单独的表格输出。这是很有必要的，以便结果块不用缓冲结果输出（缓冲在可以预见结果集宽度的时候是很有必要的）。
+为避免将太多数据传输到终端，只打印前10,000行。 如果行数大于或等于10,000，则会显示消息“Showed first 10 000”。
+该格式仅适用于输出查询结果，但不适用于解析（将数据插入到表中）。
 
-The Pretty format supports outputting total values (when using WITH TOTALS) and extremes (when 'extremes' is set to 1). In these cases, total values and extreme values are output after the main data, in separate tables. Example (shown for the PrettyCompact format):
+Pretty格式支持输出总值（当使用 WITH TOTALS 时）和极值（当 `extremes` 设置为1时）。 在这些情况下，总数值和极值在主数据之后以单独的表格形式输出。 示例（以 PrettyCompact 格式显示）：
 
 ```sql
 SELECT EventDate, count() AS c FROM test.hits GROUP BY EventDate WITH TOTALS ORDER BY EventDate FORMAT PrettyCompact

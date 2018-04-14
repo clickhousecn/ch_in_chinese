@@ -1,7 +1,7 @@
 # TabSeparatedWithNamesAndTypes
 
-Differs from the `TabSeparated` format in that the column names are written to the first row, while the column types are in the second row.
-During parsing, the first and second rows are completely ignored.
+与 `TabSeparated` 格式不一样的是，第一行会显示列的名称，第二行会显示列的类型。
 
-This format is also available under the name ` TSVWithNamesAndTypes`.
+在解析过程中，第一行和第二行完全被忽略。
 
+这种格式也可以使用名称 ` TSVWithNamesAndTypes` 来表示。
