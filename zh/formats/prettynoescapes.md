@@ -1,20 +1,20 @@
 # PrettyNoEscapes
 
-Differs from Pretty in that ANSI-escape sequences aren't used. This is necessary for displaying this format in a browser, as well as for using the 'watch' command-line utility.
+与 `Pretty` 格式不一样的是，它不使用 ANSI 字符转义， 这在浏览器显示数据以及在使用 `watch` 命令行工具是有必要的。
 
-Example:
+示例：
 
 ```bash
 watch -n1 "clickhouse-client --query='SELECT * FROM system.events FORMAT PrettyCompactNoEscapes'"
 ```
 
-You can use the HTTP interface for displaying in the browser.
+您可以使用 HTTP 接口来获取数据，显示在浏览器中。
 
 ## PrettyCompactNoEscapes
 
-The same as the previous setting.
+用法类比上述。
 
 ## PrettySpaceNoEscapes
 
-The same as the previous setting.
+用法类比上述。
 
