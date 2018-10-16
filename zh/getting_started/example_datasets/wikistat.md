@@ -1,8 +1,8 @@
 # WikiStat
 
-See: <http://dumps.wikimedia.org/other/pagecounts-raw/>
+相关介绍： <http://dumps.wikimedia.org/other/pagecounts-raw/>
 
-Creating a table:
+创建一个表：
 
 ```sql
 CREATE TABLE wikistat
@@ -17,7 +17,7 @@ CREATE TABLE wikistat
 ) ENGINE = MergeTree(date, (path, time), 8192);
 ```
 
-Loading data:
+导入数据：
 
 ```bash
 for i in {2007..2016}; do for j in {01..12}; do echo $i-$j >&2; curl -sS "http://dumps.wikimedia.org/other/pagecounts-raw/$i/$i-$j/" | grep -oE 'pagecounts-[0-9]+-[0-9]+\.gz'; done; done | sort | uniq | tee links.txt

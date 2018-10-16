@@ -2,7 +2,7 @@
 
 # OnTime
 
-This performance test was created by Vadim Tkachenko. See:
+性能测试由 Vadim Tkachenko 提供。参考：
 
 - <https://www.percona.com/blog/2009/10/02/analyzing-air-traffic-performance-with-infobright-and-monetdb/>
 - <https://www.percona.com/blog/2009/10/26/air-traffic-queries-in-luciddb/>
@@ -11,7 +11,7 @@ This performance test was created by Vadim Tkachenko. See:
 - <https://www.percona.com/blog/2016/01/07/apache-spark-with-air-ontime-performance-data/>
 - <http://nickmakos.blogspot.ru/2012/08/analyzing-air-traffic-performance-with.html>
 
-Downloading data:
+下载数据集：
 
 ```bash
 for s in `seq 1987 2017`
@@ -23,9 +23,9 @@ done
 done
 ```
 
-(from <https://github.com/Percona-Lab/ontime-airline-performance/blob/master/download.sh> )
+(来自 <https://github.com/Percona-Lab/ontime-airline-performance/blob/master/download.sh> )
 
-Creating a table:
+创建表：
 
 ```sql
 CREATE TABLE `ontime` (
@@ -141,13 +141,13 @@ CREATE TABLE `ontime` (
 ) ENGINE = MergeTree(FlightDate, (Year, FlightDate), 8192)
 ```
 
-Loading data:
+导入数据：
 
 ```bash
 for i in *.zip; do echo $i; unzip -cq $i '*.csv' | sed 's/\.00//g' | clickhouse-client --host=example-perftest01j --query="INSERT INTO ontime FORMAT CSVWithNames"; done
 ```
 
-Queries:
+查询：
 
 Q0.
 
@@ -155,31 +155,31 @@ Q0.
 select avg(c1) from (select Year, Month, count(*) as c1 from ontime group by Year, Month);
 ```
 
-Q1. The number of flights per day from the year 2000 to 2008
+Q1. 从2000年到2008年每天的航班数。
 
 ```sql
 SELECT DayOfWeek, count(*) AS c FROM ontime WHERE Year >= 2000 AND Year <= 2008 GROUP BY DayOfWeek ORDER BY c DESC;
 ```
 
-Q2. The number of flights delayed by more than 10 minutes, grouped by the day of the week, for 2000-2008
+Q2. 从2000到2008年且航班延误大于10分钟的数据中，按星期分组的航班延误情况。
 
 ```sql
 SELECT DayOfWeek, count(*) AS c FROM ontime WHERE DepDelay>10 AND Year >= 2000 AND Year <= 2008 GROUP BY DayOfWeek ORDER BY c DESC
 ```
 
-Q3. The number of delays by airport for 2000-2008
+Q3. 从2000年到2008年的航班延误数
 
 ```sql
 SELECT Origin, count(*) AS c FROM ontime WHERE DepDelay>10 AND Year >= 2000 AND Year <= 2008 GROUP BY Origin ORDER BY c DESC LIMIT 10
 ```
 
-Q4. The number of delays by carrier for 2007
+Q4. 2007年运营商拖延的次数
 
 ```sql
 SELECT Carrier, count(*) FROM ontime WHERE DepDelay>10  AND Year = 2007 GROUP BY Carrier ORDER BY count(*) DESC
 ```
 
-Q5. The percentage of delays by carrier for 2007
+Q5. 2007年运营商延误的百分比
 
 ```sql
 SELECT Carrier, c, c2, c*1000/c2 as c3
@@ -205,13 +205,13 @@ ANY INNER JOIN
 ORDER BY c3 DESC;
 ```
 
-Better version of the same query:
+更好的查询语句版本：
 
 ```sql
 SELECT Carrier, avg(DepDelay > 10) * 1000 AS c3 FROM ontime WHERE Year = 2007 GROUP BY Carrier ORDER BY Carrier
 ```
 
-Q6. The previous request for a broader range of years, 2000-2008
+Q6. 更大年份范围查询，从2000年到2008年
 
 ```sql
 SELECT Carrier, c, c2, c*1000/c2 as c3
@@ -243,7 +243,7 @@ Better version of the same query:
 SELECT Carrier, avg(DepDelay > 10) * 1000 AS c3 FROM ontime WHERE Year >= 2000 AND Year <= 2008 GROUP BY Carrier ORDER BY Carrier
 ```
 
-Q7. Percentage of flights delayed for more than 10 minutes, by year
+Q7. 航班延误超过10分钟的百分比情况，按年份分组计算
 
 ```sql
 SELECT Year, c1/c2
@@ -267,13 +267,13 @@ ANY INNER JOIN
 ORDER BY Year
 ```
 
-Better version of the same query:
+更好的查询语句版本：
 
 ```sql
 SELECT Year, avg(DepDelay > 10) FROM ontime GROUP BY Year ORDER BY Year
 ```
 
-Q8. The most popular destinations by the number of directly connected cities for various year ranges
+Q8. 在直接连接城市中，最受欢迎的目的地数量，按不同年份分组
 
 ```sql
 SELECT DestCityName, uniqExact(OriginCityName) AS u FROM ontime WHERE Year >= 2000 and Year <= 2010 GROUP BY DestCityName ORDER BY u DESC LIMIT 10;
@@ -303,7 +303,7 @@ ORDER by rate DESC
 LIMIT 1000;
 ```
 
-Bonus:
+奖金情况:
 
 ```sql
 SELECT avg(cnt) FROM (SELECT Year,Month,count(*) AS cnt FROM ontime WHERE DepDel15=1 GROUP BY Year,Month)

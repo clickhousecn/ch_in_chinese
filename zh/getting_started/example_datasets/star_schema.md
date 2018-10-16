@@ -1,6 +1,6 @@
 # Star scheme
 
-Compiling dbgen: <https://github.com/vadimtk/ssb-dbgen>
+编译 dbgen: <https://github.com/vadimtk/ssb-dbgen>
 
 ```bash
 git clone git@github.com:vadimtk/ssb-dbgen.git
@@ -8,18 +8,18 @@ cd ssb-dbgen
 make
 ```
 
-There will be some warnings during the process, but this is normal.
+这个过程中会有一些警告信息，但这是正常的。
 
-Place ` dbgen`  and ` dists.dss`  in any location with 800 GB of free disk space.
+将 ` dbgen`  and ` dists.dss`  放在 800GB 空闲磁盘的任意目录下。
 
-Generating data:
+生成数据：
 
 ```bash
 ./dbgen -s 1000 -T c
 ./dbgen -s 1000 -T l
 ```
 
-Creating tables in ClickHouse:
+在 ClickHouse 中创建对应表：
 
 ```sql
 CREATE TABLE lineorder (
@@ -72,11 +72,11 @@ CREATE TABLE customerd AS customer ENGINE = Distributed(perftest_3shards_1replic
 CREATE TABLE partd AS part ENGINE = Distributed(perftest_3shards_1replicas, default, part, rand());
 ```
 
-For testing on a single server, just use MergeTree tables.
-For distributed testing, you need to configure the ` perftest_3shards_1replicas`  cluster in the config file.
-Next, create MergeTree tables on each server and a Distributed above them.
+要在单个服务器上进行测试，只需使用 MergeTree 表。
+对于分布式测试，需要在配置文件中配置 `perftest_3shards_1replicas` 集群。
+接下来，在每个服务器上创建 MergeTree 表，并在其上面创建一个分布式表。
 
-Downloading data (change 'customer' to 'customerd' in the distributed version):
+下载数据（在分布式版本中将 'customer' 更改为 'customerd' ）：
 
 ```bash
 cat customer.tbl | sed 's/$/2000-01-01/' | clickhouse-client --query "INSERT INTO customer FORMAT CSV"

@@ -1,33 +1,31 @@
-# Getting started
+# 入门
 
-## System requirements
+## 系统要求
 
-This is not a cross-platform system. It requires Linux Ubuntu Precise (12.04) or newer, with x86_64 architecture and support for the SSE 4.2 instruction set.
-To check for SSE 4.2:
+ClickHouse 不是一个跨平台的系统。它需要工作在 Linux Ubuntu Precise（12.04）或更新的版本，操作系统需要是 x86_64 架构且支持 SSE 4.2 指令集。
+查看是否支持  SSE 4.2 ：
 
 ```bash
 grep -q sse4_2 /proc/cpuinfo && echo "SSE 4.2 supported" || echo "SSE 4.2 not supported"
 ```
 
-We recommend using Ubuntu Trusty, Ubuntu Xenial, or Ubuntu Precise.
-The terminal must use UTF-8 encoding (the default in Ubuntu).
+推荐使用 Ubuntu Trusty，Ubuntu Xenial 或 Ubuntu Precise。终端必须使用 UTF-8 编码（在 Ubuntu 中默认是此编码）。
 
-## Installation
+## 安装
 
-For testing and development, the system can be installed on a single server or on a desktop computer.
+若是为了测试或开发来使用它，ClickHouse 可以安装在单台服务器上或台式计算机上。
 
-### Installing from packages
+### 从包中安装
 
-In `/etc/apt/sources.list` (or in a separate `/etc/apt/sources.list.d/clickhouse.list` file), add the repository:
+在 `/etc/apt/sources.list` (或在单独的 `/etc/apt/sources.list.d/clickhouse.list` 文件中), 添加以下库:
 
 ```text
 deb http://repo.yandex.ru/clickhouse/trusty stable main
 ```
 
-On other versions of Ubuntu, replace `trusty` with `xenial` or `precise`.
-If you want to use the most recent test version, replace 'stable' with 'testing'.
+在其他版本的Ubuntu上，将 `trusty` 替换成  `xenial` 或者  `precise`。如果想使用最新的测试版本，请将 `stable` 替换为 `testing`。
 
-Then run:
+然后运行：
 
 ```bash
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv E0C56BD4    # optional
@@ -35,81 +33,83 @@ sudo apt-get update
 sudo apt-get install clickhouse-client clickhouse-server-common
 ```
 
-You can also download and install packages manually from here:<http://repo.yandex.ru/clickhouse/trusty/pool/main/c/clickhouse/><http://repo.yandex.ru/clickhouse/xenial/pool/main/c/clickhouse/><http://repo.yandex.ru/clickhouse/precise/pool/main/c/clickhouse/>
+您也可以从这里手动下载和安装软件包：
+<http://repo.yandex.ru/clickhouse/trusty/pool/main/c/clickhouse/>
+<http://repo.yandex.ru/clickhouse/xenial/pool/main/c/clickhouse/>
+<http://repo.yandex.ru/clickhouse/precise/pool/main/c/clickhouse/>
 
-ClickHouse contains access restriction settings. They are located in the 'users.xml' file (next to 'config.xml').
-By default, access is allowed from anywhere for the 'default' user, without a password. See 'user/default/networks'.
-For more information, see the section "Configuration files".
+ClickHouse 可以设置访问限制。它们位于 `users.xml` 文件（`config.xml` 旁边）。
+默认情况下，`default` 用户可以在任何地方访问，且不需要密码。请参阅 `user/default/networks`。
+有关更多信息，请参阅 [配置文件](../operations/configuration_files.md) 一节
 
-### Installing from sources
+### 从源码安装
 
-To compile, follow the instructions: build.md
+要编译，请先参考：build.md 文件。
 
-You can compile packages and install them.
-You can also use programs without installing packages.
+可以编译对应的包来安装它们。
+也可以不安装对应的包来使用程序。
 
 ```text
 Client: dbms/src/Client/
 Server: dbms/src/Server/
 ```
 
-For the server, create a catalog with data, such as:
+对于服务端，可以创建一个数据目录，例如：
 
 ```text
 /opt/clickhouse/data/default/
 /opt/clickhouse/metadata/default/
 ```
 
-(Configurable in the server config.)
-Run 'chown' for the desired user.
+(服务端配置文件是可以配置的。)
+可以运行 `chown` 命令来将该目录归属给指定用户。
 
-Note the path to logs in the server config (src/dbms/src/Server/config.xml).
+服务端配置中的日志路径为 `src/dbms/src/Server/config.xml`。
 
-### Other installation methods
+### 其他安装方法
 
-Docker image: <https://hub.docker.com/r/yandex/clickhouse-server/>
+Docker 镜像: <https://hub.docker.com/r/yandex/clickhouse-server/>
 
-RPM packages for CentOS or RHEL: <https://github.com/Altinity/clickhouse-rpm-install>
+RPM 包，支持 CentOS 和 RHEL: <https://github.com/Altinity/clickhouse-rpm-install>
 
 Gentoo overlay: <https://github.com/kmeaw/clickhouse-overlay>
 
-## Launch
+## 启动
 
-To start the server (as a daemon), run:
+要启动服务 (或者作为后台进程启动), 运行:
 
 ```bash
 sudo service clickhouse-server start
 ```
 
-See the logs in the `/var/log/clickhouse-server/ directory.`
+在 `/var/log/clickhouse-server/` 目录看到对应的日志。
 
-If the server doesn't start, check the configurations in the file `/etc/clickhouse-server/config.xml.`
+如果服务没有启动，请检查文件 `/etc/clickhouse-server/config.xml` 中的配置。
 
-You can also launch the server from the console:
+您也可以从控制台启动服务：
 
 ```bash
 clickhouse-server --config-file=/etc/clickhouse-server/config.xml
 ```
 
-In this case, the log will be printed to the console, which is convenient during development.
-If the configuration file is in the current directory, you don't need to specify the '--config-file' parameter. By default, it uses './config.xml'.
+在这种情况下，日志将被打印到控制台，这在开发过程中很方便。如果配置文件位于当前目录中，则不需要指定 `--config-file` 参数。默认情况下，它使用 `./config.xml`。
 
-You can use the command-line client to connect to the server:
+您可以使用命令行客户端来连接服务：
 
 ```bash
 clickhouse-client
 ```
 
-The default parameters indicate connecting with localhost:9000 on behalf of the user 'default' without a password.
-The client can be used for connecting to a remote server. Example:
+默认参数表示用 `default` 用户以及空密码来连接 `localhost:9000` 服务。
+客户端也可以用来连接远程服务。例如：
 
 ```bash
 clickhouse-client --host=example.com
 ```
 
-For more information, see the section "Command-line client".
+更多信息，查看 "[命令行客户端](../interfaces/cli.md)" 部分。
 
-Checking the system:
+检查系统运行情况:
 
 ```bash
 milovidov@hostname:~/work/metrica/src/dbms/src/Client$ ./clickhouse-client
@@ -130,9 +130,9 @@ SELECT 1
 :)
 ```
 
-**Congratulations, the system works!**
+**恭喜您, 系统正常工作!**
 
-To continue experimenting, you can try to download from the test data sets:
+您可以下载测试数据集来继续尝试 ClickHouse：
 
 ```eval_rst
 .. toctree::
