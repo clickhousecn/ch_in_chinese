@@ -1,22 +1,22 @@
-# Performance
+# 性能
 
-According to internal testing results, ClickHouse shows the best performance for comparable operating scenarios among systems of its class that were available for testing. This includes the highest throughput for long queries, and the lowest latency on short queries. Testing results are shown on a separate page.
+根据内部测试结果，ClickHouse 在可用于测试的同类系统中性能最优。这包括复杂查询的最高吞吐量和简单查询的最低延迟。 测试结果显示在单独的[页面](https://clickhouse.yandex/benchmark.html)上。
 
-## Throughput for a single large query
+## 单个大规模查询的吞吐量
 
-Throughput can be measured in rows per second or in megabytes per second. If the data is placed in the page cache, a query that is not too complex is processed on modern hardware at a speed of approximately 2-10 GB/s of uncompressed data on a single server (for the simplest cases, the speed may reach 30 GB/s). If data is not placed in the page cache, the speed depends on the disk subsystem and the data compression rate. For example, if the disk subsystem allows reading data at 400 MB/s, and the data compression rate is 3, the speed will be around 1.2 GB/s. To get the speed in rows per second, divide the speed in bytes per second by the total size of the columns used in the query. For example, if 10 bytes of columns are extracted, the speed will be around 100-200 million rows per second.
+吞吐量可以以每秒行数或兆字节每秒来衡量。 如果数据放置在页面缓存中，则在现代硬件上处理不太复杂的查询，速度大约为单个服务器上未压缩数据的 2-10 GB / s（对于最简单的情况，速度可能会达到 30 GB / s）。如果数据未放置在页面缓存中，则速度取决于磁盘子系统和数据压缩率。 例如，如果磁盘子系统允许以400 MB / s 读取数据，并且数据压缩率为3，则速度将为1.2 GB / s左右。 要获得每秒查询行数的速度，请将查询中使用的列的总大小除以每秒字节数。 例如，如果提取的是10个字节的列，速度将大约为每秒1到2亿行。
 
-The processing speed increases almost linearly for distributed processing, but only if the number of rows resulting from aggregation or sorting is not too large.
+处理速度对于分布式处理几乎线性地增加，但只有在聚合或排序所产生的行数不太大时是这样的。
 
-## Latency when processing short queries
+## 简单查询下的延迟
 
-If a query uses a primary key and does not select too many rows to process (hundreds of thousands), and does not use too many columns, we can expect less than 50 milliseconds of latency (single digits of milliseconds in the best case) if data is placed in the page cache. Otherwise, latency is calculated from the number of seeks. If you use rotating drives, for a system that is not overloaded, the latency is calculated by this formula: seek time (10 ms) \* number of columns queried \* number of data parts.
+如果查询使用主键并且未选择要处理的行数过多（数十万），并且不使用太多的列，且数据被放置在页面缓存中，那么我们可以预计延迟小于50ms（最好情况下为个位数毫秒）。否则，延迟是根据搜索次数计算的。 如果您使用旋转驱动器，对于没有过载的系统，延迟按以下公式计算：查找时间（10ms）\* 查询的列数 \* 数据部分的数量。
 
-## Throughput when processing a large quantity of short queries
+## 处理大量简单查询的吞吐量
 
-Under the same conditions, ClickHouse can handle several hundred queries per second on a single server (up to several thousand in the best case). Since this scenario is not typical for analytical DBMSs, we recommend expecting a maximum of 100 queries per second.
+在相同的条件下，ClickHouse 可以在单个服务器上每秒处理几百个查询（在最好的情况下最多可以处理几千个查询）。 由于这种情况对于分析性数据库并不常见，因此我们建议每秒最多可以处理100个查询。
 
-## Performance when inserting data
+## 数据插入的性能
 
-We recommend inserting data in packets of at least 1000 rows, or no more than a single request per second. When inserting to a MergeTree table from a tab-separated dump, the insertion speed will be from 50 to 200 MB/s. If the inserted rows are around 1 Kb in size, the speed will be from 50,000 to 200,000 rows per second. If the rows are small, the performance will be higher in rows per second (on Banner System data -`>` 500,000 rows per second; on Graphite data -`>` 1,000,000 rows per second). To improve performance, you can make multiple INSERT queries in parallel, and performance will increase linearly.
+我们建议将数据以至少1000行的数据包进行插入，或每秒不超过一个请求。以 tab-separated 的数据集插入到 MergeTree 表，插入速度达到50到200 MB / s。 如果插入的行大小约为1 Kb，则速度将从每秒50,000到200,000行。 如果行很小，则每秒钟的行数会更高（在 Banner System data 中 -`>`每秒500,000行；在 Graphite data 中 -`>` 每秒1,000,000行）。为了提高性能，可以并行执行多个 INSERT 查询，并且性能会线性增加。
 
