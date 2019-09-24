@@ -1,22 +1,25 @@
-# Functions for working with arrays
+# 与数组相关的函数
 
 ## empty
 
-Returns 1 for an empty array, or 0 for a non-empty array.
-The result type is UInt8.
-The function also works for strings.
+为空数组返回1，或者为非空数组返回0。
+结果类型是UInt8。
+该函数也适用于字符串。
 
 ## notEmpty
 
-Returns 0 for an empty array, or 1 for a non-empty array.
-The result type is UInt8.
-The function also works for strings.
+为空数组返回0，或者为非空数组返回1。
+结果类型是UInt8。
+该函数也适用于字符串。
+
 
 ## length
 
-Returns the number of items in the array.
-The result type is UInt64.
-The function also works for strings.
+返回数组中的条目数。
+结果类型是UInt64。
+该函数也适用于字符串。
+
+
 
 ## emptyArrayUInt8, emptyArrayUInt16, emptyArrayUInt32, emptyArrayUInt64
 
@@ -28,36 +31,44 @@ The function also works for strings.
 
 ## emptyArrayString
 
-Accepts zero arguments and returns an empty array of the appropriate type.
+接受零参数，并返回相应类型的空数组。
+
+
 
 ## emptyArrayToSingle
 
-Accepts an empty array and returns a one-element array that is equal to the default value.
+接受一个空数组，同时返回一个等于默认值的单元素数组。
+
+
 
 ## range(N)
 
-Returns an array of numbers from 0 to N-1.
-Just in case, an exception is thrown if arrays with a total length of more than 100,000,000 elements are created in a data block.
+返回从0到N-1的数组数。
+以防万一，如果在一个数据块中创建总长度超过100,000,000个元素的数组，则会引发异常。
+
+
 
 ## array(x1, ...), operator \[x1, ...\]
 
-Creates an array from the function arguments.
-The arguments must be constants and have types that have the smallest common type. At least one argument must be passed, because otherwise it isn't clear which type of array to create. That is, you can't use this function to create an empty array (to do that, use the 'emptyArray\*' function described above).
-Returns an 'Array(T)' type result, where 'T' is the smallest common type out of the passed arguments.
+从函数参数中创建一个数组。
+参数必须是常量，并且具有最小通用类型的数据类型。至少传递一个参数，否则不清楚创建哪种类型的数组。也就是说，你不能使用这个函数来创建一个空数组（为此，使用上面描述的 'emptyArray *' 函数）。
+返回一个 'Array(T)' 类型的结果，其中 'T' 是传递参数中最小的通用类型。
+
+
 
 ## arrayConcat
 
-Combines arrays passed as arguments.
+绑定作为参数传递的数组。
 
 ```
 arrayConcat(arrays)
 ```
 
-**Arguments**
+**参数**
 
-- `arrays` – Arrays of comma-separated `[values]`.
+- `arrays` – 逗号分隔的[values]的数组。
 
-**Example**
+**示例**
 
 ```sql
 SELECT arrayConcat([1, 2], [3, 4], [5, 6]) AS res
@@ -71,30 +82,41 @@ SELECT arrayConcat([1, 2], [3, 4], [5, 6]) AS res
 
 ## arrayElement(arr, n), operator arr[n]
 
-Get the element with the index 'n' from the array 'arr'.'n' must be any integer type.
-Indexes in an array begin from one.
-Negative indexes are supported. In this case, it selects the corresponding element numbered from the end. For example, 'arr\[-1\]' is the last item in the array.
+从数组 'arr' 中获取索引为 'n' 的元素。'n' 必须是任意的整数类型。
+数组中的索引从1开始。
+支持负数索引。在这种情况下，它从末尾选择相应的元素。例如，'arr [-1]' 是数组中的最后一项。
 
-If the index falls outside of the bounds of an array, it returns some default value (0 for numbers, an empty string for strings, etc.).
+
+如果索引落在数组边界之外，它将返回一些默认值（数值为0，字符串为空字符串等）。
+
+
 
 ## has(arr, elem)
 
-Checks whether the 'arr' array has the 'elem' element.
-Returns 0 if the the element is not in the array, or 1 if it is.
+检查 'arr' 数组是否有 'elem' 元素。
+如果元素不在数组中，则返回0；如果在数组中，则返回1。
+
+
 
 ## indexOf(arr, x)
 
-Returns the index of the 'x' element (starting from 1) if it is in the array, or 0 if it is not.
+如果它在数组中，则返回 'x' 元素的索引（从1开始）；如果不在数组中，则返回0。
+
+
 
 ## countEqual(arr, x)
 
-Returns the number of elements in the array equal to x. Equivalent to arrayCount (elem-&gt;  elem = x, arr).
+返回数组中的等于x的元素数量，等同与 arrayCount (elem->elem = x， arr)。
+
 
 ## arrayEnumerate(arr)
 
-Returns the array \[1, 2, 3, ..., length (arr) \]
+返回数组 [1, 2, 3, ..., length (arr) ]
 
-This function is normally used with ARRAY JOIN. It allows counting something just once for each array after applying ARRAY JOIN. Example:
+此函数通常被用于ARRAY JOIN。在使用ARRAY JOIN后，它为每个数组执行计数。例如：
+
+
+
 
 ```sql
 SELECT
@@ -114,7 +136,9 @@ LIMIT 10
 └─────────┴───────┘
 ```
 
-In this example, Reaches is the number of conversions (the strings received after applying ARRAY JOIN), and Hits is the number of pageviews (strings before ARRAY JOIN). In this particular case, you can get the same result in an easier way:
+在这个例子中，Reaches 是转换次数（在使用 ARRAY JOIN 后收到的字符串），Hits是页面浏览量（在使用 ARRAY JOIN之前的字符串）。在这种情况下，您可以通过更简单的方式获得相同的结果：
+
+
 
 ```sql
 SELECT
@@ -129,16 +153,18 @@ WHERE (CounterID = 160656) AND notEmpty(GoalsReached)
 │   95606 │ 31406 │
 └─────────┴───────┘
 ```
+该功能也可用于高阶功能。例如，您可以使用它为匹配条件的元素获取数组索引。
 
-This function can also be used in higher-order functions. For example, you can use it to get array indexes for elements that match a condition.
 
 ## arrayEnumerateUniq(arr, ...)
 
-Returns an array the same size as the source array, indicating for each element what its position is among elements with the same value.
-For example: arrayEnumerateUniq(\[10, 20, 10, 30\]) = \[1,  1,  2,  1\].
+返回与源数组大小相同的数组，为每个元素提示相同值的元素的位置在哪。
+例如: arrayEnumerateUniq(\[10, 20, 10, 30\]) = \[1,  1,  2,  1\]。
 
-This function is useful when using ARRAY JOIN and aggregation of array elements.
-Example:
+使用 ARRAY JOIN 和数组元素聚合时，此函数比较有用。例如：
+
+
+示例：
 
 ```sql
 SELECT
@@ -170,9 +196,14 @@ LIMIT 10
 └─────────┴─────────┴────────┘
 ```
 
-In this example, each goal ID has a calculation of the number of conversions (each element in the Goals nested data structure is a goal that was reached, which we refer to as a conversion) and the number of sessions. Without ARRAY JOIN, we would have counted the number of sessions as sum(Sign). But in this particular case, the rows were multiplied by the nested Goals structure, so in order to count each session one time after this, we apply a condition to the value of the arrayEnumerateUniq(Goals.ID) function.
+在这个例子中，每个目标ID都有一个转换次数的计算（目标嵌套数据结构中的每个元素都是达到的目标，我们称之为转换）以及会话数量。如果没有 ARRAY JOIN，我们可以将会话的数量计算为总和（Sign）。但是在这种特殊情况下，行与嵌套目标结构相乘，所以为了在这之后计算每个会话，我们将条件应用到 arrayEnumerateUniq（Goals.ID）函数的值中。
 
-The arrayEnumerateUniq function can take multiple arrays of the same size as arguments. In this case, uniqueness is considered for tuples of elements in the same positions in all the arrays.
+
+
+arrayEnumerateUniq 函数可以将多个相同大小的数组作为参数。
+在这种情况下，唯一性被认为是所有数组中相同位置元素的元组。
+
+
 
 ```sql
 SELECT arrayEnumerateUniq([1, 1, 1, 2, 2, 2], [1, 1, 2, 1, 1, 2]) AS res
@@ -184,21 +215,25 @@ SELECT arrayEnumerateUniq([1, 1, 1, 2, 2, 2], [1, 1, 2, 1, 1, 2]) AS res
 └───────────────┘
 ```
 
-This is necessary when using ARRAY JOIN with a nested data structure and further aggregation across multiple elements in this structure.
+当使用带有嵌套数据结构的 ARRAY JOIN，并在这个结构中的多个元素之间进一步聚合时，这是必要的。
+
+
 
 ## arrayPopBack
 
-Removes the last item from the array.
+删除数组中的最后一项。
+
+
 
 ```
 arrayPopBack(array)
 ```
 
-**Arguments**
+**参数**
 
-- `array` – Array.
+- `array` – 数组.
 
-**Example**
+**示例**
 
 ```sql
 SELECT arrayPopBack([1, 2, 3]) AS res
@@ -212,7 +247,7 @@ SELECT arrayPopBack([1, 2, 3]) AS res
 
 ## arrayPopFront
 
-Removes the first item from the array.
+删除数组中的第一项。
 
 ```
 arrayPopFront(array)
@@ -220,7 +255,7 @@ arrayPopFront(array)
 
 **Arguments**
 
-- `array` – Array.
+- `array` – 数组.
 
 **Example**
 
@@ -236,8 +271,7 @@ SELECT arrayPopFront([1, 2, 3]) AS res
 
 ## arrayPushBack
 
-Adds one item to the end of the array.
-
+删除数组中的最后一项。
 ```
 arrayPushBack(array, single_value)
 ```
@@ -245,9 +279,11 @@ arrayPushBack(array, single_value)
 **Arguments**
 
 - `array` – Array.
-- `single_value` – A single value. Only numbers can be added to an array with numbers, and only strings can be added to an array of strings. When adding numbers, ClickHouse automatically sets the `single_value` type for the data type of the array. For more information about the types of data in ClickHouse, see "[Data types](../data_types/index.md#data_types)".
+- `single_value` – 单个值。只有数字可以添加到带有数值的数组中，只有将字符串能够添加到字符串数组中。在添加数值时，ClickHouse会自动为数组的数据类型设置 'single_value' 类型。有关ClickHouse中数据类型的更多信息，请参阅“[数据类型](../data_types/index.md#data_types)”。
 
-**Example**
+
+
+**示例**
 
 ```sql
 SELECT arrayPushBack(['a'], 'b') AS res
@@ -261,18 +297,18 @@ SELECT arrayPushBack(['a'], 'b') AS res
 
 ## arrayPushFront
 
-Adds one element to the beginning of the array.
+添加一个元素到数组的开头.
 
 ```
 arrayPushFront(array, single_value)
 ```
 
-**Arguments**
+**参数**
 
 - `array` – Array.
-- `single_value` – A single value.  Only numbers can be added to an array with numbers, and only strings can be added to an array of strings. When adding numbers, ClickHouse automatically sets the `single_value` type for the data type of the array.  For more information about the types of data in ClickHouse, see "[Data types](../data_types/index.md#data_types)".
+- `single_value` – 单个值。只有数字可以添加到带有数值的数组中，只有将字符串能够添加到字符串数组中。在添加数值时，ClickHouse会自动为数组的数据类型设置 'single_value' 类型。有关ClickHouse中数据类型的更多信息，请参阅“[数据类型](../data_types/index.md#data_types)”。
 
-**Example**
+**示例**
 
 ```sql
 SELECT arrayPushBack(['b'], 'a') AS res
@@ -286,19 +322,20 @@ SELECT arrayPushBack(['b'], 'a') AS res
 
 ## arraySlice
 
-Returns a slice of the array.
+返回一个数组的切片.
 
 ```
 arraySlice(array, offset[, length])
 ```
 
-**Arguments**
+**示例**
 
-- `array` –  Array of data.
-- `offset` – Offset from the edge of the array. A positive value indicates an offset on the left, and a negative value is an indent on the right. Numbering of the array items begins with 1.
-- `length` - The length of the required slice. If you specify a negative value, the function returns an open slice `[offset, array_length - length)`. If you omit the value, the function returns the slice `[offset, the_end_of_array]`.
+- `array` – 数组数据.
+- `offset` – 数组边界的偏移量。正数表示左侧的偏移量，负数表示右侧的缩进量。数组项的编号从1开始。
+- `length` - 所需切片的长度。如果你指定一个负值，函数返回一个打开的切片 [offset，array_length - length）。如果省略该值，则函数返回切片[offset，the_end_of_array]。
 
-**Example**
+
+**示例**
 
 ```sql
 SELECT arraySlice([1, 2, 3, 4, 5], 2, 3) AS res
@@ -312,12 +349,12 @@ SELECT arraySlice([1, 2, 3, 4, 5], 2, 3) AS res
 
 ## arrayUniq(arr, ...)
 
-If one argument is passed, it counts the number of different elements in the array.
-If multiple arguments are passed, it counts the number of different tuples of elements at corresponding positions in multiple arrays.
+如果传递一个参数，它会计算数组中不同元素的数量。如果传递多个参数，它将计算多个数组中相应位置的不同元组的数量。
 
-If you want to get a list of unique items in an array, you can use arrayReduce('groupUniqArray', arr).
+如果你想得到一个数组中唯一元素的列表，你可以使用 arrayReduce('groupUniqArray', arr)。
+
 
 ## arrayJoin(arr)
 
-A special function. See the section ["ArrayJoin function"](array_join.md#functions_arrayjoin).
+一个特殊的函数. 请查看章节 ["ArrayJoin function"](array_join.md#functions_arrayjoin)。
 
