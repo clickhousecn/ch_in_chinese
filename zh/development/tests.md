@@ -1,30 +1,30 @@
-# How to run ClickHouse tests
+# 如何运行 ClickHouse 测试
 
-The `clickhouse-test` utility that is used for functional testing is written using Python 2.x.It also requires you to have some third-party packages:
+`clickhouse-test` 程序是用来做功能测试的，它是用 Python 2.x 实现的。运行它之前也需要安装三方包。
 
 ```bash
 $ pip install lxml termcolor
 ```
 
-In a nutshell:
+简而言之：
 
-- Put the `clickhouse` program to `/usr/bin` (or `PATH`)
-- Create a `clickhouse-client` symlink in `/usr/bin` pointing to `clickhouse`
-- Start the `clickhouse` server
-- `cd dbms/tests/`
-- Run `./clickhouse-test`
+- 将 `clickhouse` 程序放在 `/usr/bin` (或者 `PATH`) 目录下。
+- 在 `/usr/bin` 目录下创建一个指向 `clickhouse` 的软链 `clickhouse-client`。
+- 启动 `clickhouse` 服务。
+- 运行 `cd dbms/tests/`。
+- 执行 `./clickhouse-test`。
 
-## Example usage
+## 使用示例
 
-Run `./clickhouse-test --help` to see available options.
+执行 `./clickhouse-test --help` 来查看更多的运行选项。
 
-To run tests without having to create a symlink or mess with `PATH`:
+在不需要创建软链或修改 `PATH` 的情况下运行测试：
 
 ```bash
 ./clickhouse-test -c "../../build/dbms/src/Server/clickhouse --client"
 ```
 
-To run a single test, i.e. `00395_nullable`:
+运行单个测试，比如 `00395_nullable`:
 
 ```bash
 ./clickhouse-test 00395
